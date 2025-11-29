@@ -1,7 +1,6 @@
 {
     "name": "catchadmin/plugin",
-    "version": "0.0.1",
-    "description": "catchadmin plugin",
+    "description": "CatchAdmin Plugin Manager",
     "type": "library",
     "license": "MIT",
     "autoload": {
@@ -18,7 +17,7 @@
     "minimum-stability": "dev",
     "require": {
         "laravel/roster": "^0.2.5",
-        "catchadmin/plugin-hook": "^v0.1.0"
+        "catchadmin/plugin-hook": "^0.1.0"
     },
     "extra": {
         "laravel": {
