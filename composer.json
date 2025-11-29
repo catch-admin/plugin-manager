@@ -1,0 +1,30 @@
+{
+    "name": "catchadmin/plugin",
+    "version": "0.0.1",
+    "description": "catchadmin plugin",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Catch\\Plugin\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "JaguarJack",
+            "email": "njphper@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "laravel/roster": "^0.2.5",
+        "catchadmin/plugin-hook": "^v0.1.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Catch\\Plugin\\PluginServiceProvider"
+            ]
+        }
+    }
+}

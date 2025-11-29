@@ -1,0 +1,87 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{namespace}};
+
+/**
+ * 插件生命周期 Hook
+ * 
+ * 方法说明：
+ * - beforeInstall: 安装前（可阻止安装，不可用 Laravel）
+ * - afterInstall: 安装后（可使用 Laravel）
+ * - beforeUpdate: 更新前（可使用 Laravel）
+ * - afterUpdate: 更新后（可使用 Laravel）
+ * - beforeUninstall: 卸载前（可使用 Laravel）
+ * - afterUninstall: 卸载后
+ */
+class Hook
+{
+    /**
+     * 安装前执行（可阻止安装）
+     */
+    public static function beforeInstall(array $pluginInfo): void
+    {
+        // 验证条件，抛出异常可阻止安装
+        // throw new \RuntimeException('不满足安装条件');
+    }
+
+    /**
+     * 安装后执行（可使用 Laravel）
+     */
+    public static function afterInstall(array $pluginInfo): void
+    {
+        // 运行数据库迁移
+        // \Illuminate\Support\Facades\Artisan::call('migrate', [
+        //     '--path' => 'vendor/{{name}}/database/migrations',
+        //     '--force' => true,
+        // ]);
+
+        // 发布配置文件
+        // \Illuminate\Support\Facades\Artisan::call('vendor:publish', [
+        //     '--tag' => 'my-plugin-config',
+        // ]);
+    }
+
+    /**
+     * 更新前执行（可使用 Laravel）
+     */
+    public static function beforeUpdate(array $pluginInfo): void
+    {
+        // 备份数据等
+    }
+
+    /**
+     * 更新后执行（可使用 Laravel）
+     */
+    public static function afterUpdate(array $pluginInfo): void
+    {
+        // 运行新版本的迁移
+        // \Illuminate\Support\Facades\Artisan::call('migrate', [
+        //     '--path' => 'vendor/{{name}}/database/migrations',
+        //     '--force' => true,
+        // ]);
+    }
+
+    /**
+     * 卸载前执行（可使用 Laravel）
+     */
+    public static function beforeUninstall(array $pluginInfo): void
+    {
+        // 备份数据
+        // 清理配置缓存
+        // \Illuminate\Support\Facades\Artisan::call('config:clear');
+    }
+
+    /**
+     * 卸载后执行
+     */
+    public static function afterUninstall(array $pluginInfo): void
+    {
+        // 回滚数据库迁移
+        // \Illuminate\Support\Facades\Artisan::call('migrate:rollback', [
+        //     '--path' => 'vendor/{{name}}/database/migrations',
+        //     '--force' => true,
+        // ]);
+    }
+}
