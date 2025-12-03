@@ -11,6 +11,8 @@
         <MarketPlugins 
           ref="marketPluginsRef" 
           @needLogin="handleNeedLogin"
+          @install="handleInstall"
+          @update="handleUpdate"
           @uninstall="handleUninstall" 
         />
       </el-tab-pane>
@@ -49,7 +51,7 @@ const activeTab = ref('market')
 const loginDialogVisible = ref(false)
 const loginLoading = ref(false)
 const progressDialogVisible = ref(false)
-const progressMode = ref<'install' | 'uninstall'>('install')
+const progressMode = ref<'install' | 'update' | 'uninstall'>('install')
 const marketPluginsRef = ref<InstanceType<typeof MarketPlugins>>()
 const pendingPlugin = ref<Plugin | null>(null)
 
@@ -60,6 +62,26 @@ const handleNeedLogin = (plugin: Plugin) => {
     loginDialogVisible.value = true
   } else {
     doInstallPlugin(plugin)
+  }
+}
+
+// 处理安装
+const handleInstall = (plugin: Plugin) => {
+  pendingPlugin.value = plugin
+  if (!PluginAuth.isLoggedIn()) {
+    loginDialogVisible.value = true
+  } else {
+    doInstallPlugin(plugin)
+  }
+}
+
+// 处理更新
+const handleUpdate = (plugin: Plugin) => {
+  pendingPlugin.value = plugin
+  if (!PluginAuth.isLoggedIn()) {
+    loginDialogVisible.value = true
+  } else {
+    doUpdatePlugin(plugin)
   }
 }
 
@@ -77,17 +99,32 @@ const doInstallPlugin = (plugin: Plugin) => {
   progressDialogVisible.value = true
 }
 
+// 更新插件
+const doUpdatePlugin = (plugin: Plugin) => {
+  pendingPlugin.value = plugin
+  progressMode.value = 'update'
+  progressDialogVisible.value = true
+}
+
 // 操作成功回调
 const handleProgressSuccess = (plugin: Plugin) => {
-  const msg = progressMode.value === 'install' ? '插件安装成功' : '插件卸载成功'
-  Message.success(msg)
+  const msgMap = {
+    install: '插件安装成功',
+    update: '插件更新成功',
+    uninstall: '插件卸载成功'
+  }
+  Message.success(msgMap[progressMode.value])
   marketPluginsRef.value?.fetchPlugins()
 }
 
 // 操作失败回调
 const handleProgressError = (message: string) => {
-  const defaultMsg = progressMode.value === 'install' ? '安装失败' : '卸载失败'
-  Message.error(message || defaultMsg)
+  const defaultMsgMap = {
+    install: '安装失败',
+    update: '更新失败',
+    uninstall: '卸载失败'
+  }
+  Message.error(message || defaultMsgMap[progressMode.value])
 }
 
 // 处理市场登录

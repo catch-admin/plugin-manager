@@ -7,6 +7,7 @@ use Catch\Plugin\Support\ComposerAuth;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -35,7 +36,6 @@ class PluginApiService
      */
     public function login(string $email, string $password): ?array
     {
-
         $response = Http::timeout($this->timeout)
             ->withOptions($this->options)
             ->post("{$this->baseUrl}/plugins/auth/login", [
@@ -56,6 +56,8 @@ class PluginApiService
      */
     public function logout(string $token): ?array
     {
+        $token = base64_decode($token);
+
         try {
             $response = Http::timeout($this->timeout)
                 ->withOptions($this->options)
@@ -75,6 +77,8 @@ class PluginApiService
      */
     public function getUser(string $token): ?array
     {
+        $token = base64_decode($token);
+
         try {
             $response = Http::timeout($this->timeout)
                 ->withOptions($this->options)
@@ -94,6 +98,8 @@ class PluginApiService
      */
     public function getCategories(string $token): ?array
     {
+        $token = base64_decode($token);
+
         try {
             $response = Http::timeout($this->timeout)
                 ->withOptions($this->options)
@@ -113,6 +119,8 @@ class PluginApiService
      */
     public function getPlugins(string $token, array $filters = []): ?array
     {
+        $token = base64_decode($token);
+
         try {
             $response = Http::timeout($this->timeout)
                 ->withOptions($this->options)
@@ -138,6 +146,8 @@ class PluginApiService
      */
     public function downloadPlugin(string $token, string $pluginId, $destination, ?string $version = null): mixed
     {
+        $token = base64_decode($token);
+
         try {
             // 构建请求 URL
             $url = "{$this->baseUrl}/plugins/{$pluginId}/download";
@@ -220,19 +230,22 @@ class PluginApiService
     }
 
     /**
-     * 校验购买权限
+     * 校验插件版本权限
      *
      * @param string $token
      * @param string $pluginId
+     * @param $versionId
      * @return bool
-     * @throws \Illuminate\Http\Client\ConnectionException
+     * @throws ConnectionException
      */
-    public function checkPermission(string $token, string $pluginId): bool
+    public function checkPermission(string $token, string $pluginId, $version): bool
     {
+        $token = base64_decode($token);
+
         $response = Http::withToken($token)
             ->timeout(30)
             ->withOptions($this->options)
-            ->get("{$this->baseUrl}/plugins/{$pluginId}/verify");
+            ->get("{$this->baseUrl}/plugins/{$pluginId}/verify/{$version}");
 
         if (! $response->successful()) {
             return false;

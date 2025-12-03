@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-alert title="插件市场插件目前只支持本地安装，安装前，请一定做好代码和数据相关备份!!!" type="warning" center show-icon />
-    
+
     <!-- 搜索和筛选工具栏 -->
     <div class="flex items-center gap-3 mt-5">
       <!-- 搜索框 -->
@@ -20,11 +20,11 @@
       <!-- 筛选器 -->
       <el-select v-model="selectedCategory" placeholder="分类" clearable class="!w-24" @change="handleSearch">
         <el-option label="全部" value="" />
-        <el-option 
-          v-for="category in categories" 
-          :key="category.id" 
-          :label="category.name" 
-          :value="category.id" 
+        <el-option
+          v-for="category in categories"
+          :key="category.id"
+          :label="category.name"
+          :value="category.id"
         />
       </el-select>
 
@@ -42,10 +42,10 @@
 
       <!-- 刷新按钮 -->
       <el-button :icon="Refresh" circle @click="handleRefresh" :loading="loading" />
-      
+
       <!-- 分隔弹性空间 -->
       <div class="flex-1"></div>
-      
+
       <!-- 账户信息 -->
       <div v-if="loggedInUser" class="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-600">
         <div class="flex items-center gap-2">
@@ -87,7 +87,7 @@
                     {{ plugin.author.name }}
                   </span>
                   <el-tag v-if="plugin.author.is_founder" type="danger" size="small" effect="plain">创始人</el-tag>
-                  <el-tag v-if="plugin.author.is_pro_user" type="warning" size="small" effect="plain">PRO</el-tag>
+                  <el-tag v-if="plugin.author.is_pro_user" type="warning" size="small" effect="plain">专业版</el-tag>
                 </div>
               </div>
               <div class="flex-shrink-0 text-right">
@@ -112,8 +112,8 @@
           <!-- 关键词标签 - 固定高度保持卡片一致 -->
           <div class="min-h-[28px] pb-3">
             <div v-if="plugin.keywords && plugin.keywords.length > 0" class="flex flex-wrap gap-1">
-              <el-tag 
-                v-for="(keyword, index) in plugin.keywords.slice(0, 3)" 
+              <el-tag
+                v-for="(keyword, index) in plugin.keywords.slice(0, 3)"
                 :key="index"
                 size="small"
                 type="info"
@@ -121,7 +121,7 @@
               >
                 {{ keyword }}
               </el-tag>
-              <el-tag 
+              <el-tag
                 v-if="plugin.keywords.length > 3"
                 size="small"
                 type="primary"
@@ -149,78 +149,127 @@
                 <Icon name="star" class="w-3 h-3 text-amber-400" />
                 <span>{{ plugin.star_rating.toFixed(1) }}</span>
               </div>
-              <span v-if="plugin.latest_version.length > 0" class="text-red-400 dark:text-red-300">
-                版本 v{{ plugin.latest_version[0].name }}
+              <span v-if="plugin.versions && plugin.versions.length > 0" class="flex items-center gap-1">
+                <Icon name="cube" class="w-3 h-3" />
+                {{ plugin.versions.length }} 个版本
               </span>
-              <span v-else>暂无版本</span>
+              <span v-else class="text-gray-400">暂无版本</span>
             </div>
           </div>
 
           <!-- 底部操作栏 -->
           <template #footer>
-            <div class="flex items-center justify-end gap-x-3">
+            <div class="flex flex-col gap-2">
               <!-- 已安装状态 -->
-              <div v-if="plugin.is_installed" class="flex items-center gap-1 text-xs">
-                <span class="inline-flex items-center px-2 py-1 rounded-full bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400">
+              <div v-if="plugin.is_installed" class="flex items-center justify-between">
+                <span class="inline-flex items-center px-2 py-1 rounded-full bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-400 text-xs">
                   <Icon name="check-circle" class="w-3.5 h-3.5 mr-1" />
-                  已安装
+                  已安装 v{{ plugin.installed_version }}
                 </span>
-                <span class="text-gray-400">v{{ plugin.installed_version }}</span>
+                <span v-if="getLatestVersion(plugin)" class="text-xs text-gray-400">
+                  最新 v{{ getLatestVersion(plugin) }}
+                </span>
               </div>
 
-              <!-- 更新按钮：已安装但有新版本 -->
-              <el-button
-                v-if="plugin.is_installed && hasUpdate(plugin)"
-                type="warning"
-                size="small"
-                plain
-                :loading="plugin.installing"
-                @click="handleInstall(plugin)"
-              >
-                <Icon name="arrow-path" class="w-4 h-4 mr-1" v-if="!plugin.installing"/>
-                更新到 v{{ plugin.latest_version[0]?.name }}
-              </el-button>
+              <!-- 操作按钮行 -->
+              <div class="flex items-center gap-2">
+                <!-- 未安装：版本选择 + 安装按钮 -->
+                <template v-if="!plugin.is_installed && plugin.versions && plugin.versions.length > 0">
+                  <el-select
+                    v-model="plugin.selected_version"
+                    size="small"
+                    class="!w-28"
+                    placeholder="版本"
+                  >
+                    <el-option
+                      v-for="ver in plugin.versions"
+                      :key="ver.id"
+                      :label="'v' + ver.name + (ver.is_free ? ' 免费' : '')"
+                      :value="ver.name"
+                    >
+                      <div class="flex items-center justify-between w-full gap-2">
+                        <span>v{{ ver.name }}</span>
+                        <span class="flex items-center gap-1">
+                          <el-tag v-if="ver.is_free" type="success" size="small" effect="plain">免费</el-tag>
+                          <el-tag v-else type="warning" size="small" effect="plain">付费</el-tag>
+                          <span class="text-xs text-gray-400">{{ ver.size }}</span>
+                        </span>
+                      </div>
+                    </el-option>
+                  </el-select>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    :loading="plugin.installing"
+                    @click="handleInstall(plugin)"
+                  >
+                    <Icon name="arrow-down-tray" class="w-4 h-4 mr-1" v-if="!plugin.installing"/>
+                    安装
+                  </el-button>
+                </template>
 
-              <!-- 卸载按钮：已安装 -->
-              <el-button
-                v-if="plugin.is_installed"
-                type="danger"
-                size="small"
-                plain
-                text
-                @click="handleUninstall(plugin)"
-              >
-                <Icon name="trash" class="w-4 h-4 mr-1"/>
-                卸载
-              </el-button>
+                <!-- 已安装：更新 + 卸载按钮 -->
+                <template v-if="plugin.is_installed">
+                  <!-- 更新按钮（有新版本时显示） -->
+                  <template v-if="hasUpdate(plugin)">
+                    <el-select
+                      v-model="plugin.selected_version"
+                      size="small"
+                      class="!w-28"
+                      placeholder="版本"
+                    >
+                      <el-option
+                        v-for="ver in getAvailableUpdates(plugin)"
+                        :key="ver.id"
+                        :label="'v' + ver.name + (ver.is_free ? ' 免费' : '')"
+                        :value="ver.name"
+                      >
+                        <div class="flex items-center justify-between w-full gap-2">
+                          <span>v{{ ver.name }}</span>
+                          <span class="flex items-center gap-1">
+                            <el-tag v-if="ver.is_free" type="success" size="small" effect="plain">免费</el-tag>
+                            <el-tag v-else type="warning" size="small" effect="plain">付费</el-tag>
+                            <span class="text-xs text-gray-400">{{ ver.size }}</span>
+                          </span>
+                        </div>
+                      </el-option>
+                    </el-select>
+                    <el-button
+                      type="warning"
+                      size="small"
+                      :loading="plugin.installing"
+                      @click="handleUpdate(plugin)"
+                    >
+                      <Icon name="arrow-path" class="w-4 h-4 mr-1" v-if="!plugin.installing"/>
+                      更新
+                    </el-button>
+                  </template>
 
-              <!-- 安装按钮：未安装 -->
-              <el-button
-                v-if="!plugin.is_installed && plugin.latest_version.length > 0"
-                type="primary"
-                size="small"
-                plain
-                text
-                :loading="plugin.installing"
-                @click="handleInstall(plugin)"
-              >
-                <Icon name="arrow-down-tray" class="w-4 h-4 mr-1" v-if="!plugin.installing"/>
-                安装
-              </el-button>
+                  <!-- 卸载按钮 -->
+                  <el-button
+                    type="danger"
+                    size="small"
+                    text
+                    @click="handleUninstall(plugin)"
+                  >
+                    <Icon name="trash" class="w-3 h-3 mr-1"/>
+                    卸载
+                  </el-button>
+                </template>
 
-              <el-link type="info" :href="`https://catchadmin.vip/plugins/${plugin.id}`" target="_blank">
-                详情
-              </el-link>
-              <el-link
-                v-if="plugin.document"
-                type="danger"
-                :href="plugin.document"
-                target="_blank"
-                title="文档"
-              >
-                <Icon name="book-open" class="mr-1"/>
-                文档
-              </el-link>
+                <!-- 链接 -->
+                <el-link type="info" :href="plugin.detail_url" target="_blank" class="ml-auto">
+                  详情
+                </el-link>
+                <el-link
+                  v-if="plugin.document"
+                  type="danger"
+                  :href="plugin.document"
+                  target="_blank"
+                >
+                  文档
+                </el-link>
+              </div>
             </div>
           </template>
         </el-card>
@@ -251,6 +300,8 @@ import { Plugin } from './type'
 
 interface Emits {
   (e: 'needLogin', plugin: Plugin): void
+  (e: 'install', plugin: Plugin): void
+  (e: 'update', plugin: Plugin): void
   (e: 'uninstall', plugin: Plugin): void
 }
 
@@ -276,11 +327,12 @@ const fetchCategories = async () => {
     const token = PluginAuth.getToken()
     const params: any = {}
     if (token) params.token = token
-    
-    const response: any = await http.get('plugins/categories', { ...params })
-    if (response.data?.data) {
-      categories.value = response.data.data
-    }
+
+    http.get('plugins/categories', { ...params }).then((response: any) => {
+      if (response.data?.data) {
+        categories.value = response.data.data.data
+      }
+    })
   } catch (error) {
     console.error('获取分类列表失败', error)
   }
@@ -308,7 +360,9 @@ const fetchPlugins = async () => {
       plugins.value = (data.data || []).map((plugin: any) => ({
         ...plugin,
         name: plugin.id || plugin.mark || plugin.name,
-        installing: false
+        installing: false,
+        // 默认选中最新版本（第一个）
+        selected_version: plugin.versions?.[0]?.name || ''
       }))
       total.value = data.total || 0
     })
@@ -343,16 +397,36 @@ const handlePageChange = (page: number) => {
   fetchPlugins()
 }
 
+// 获取最新版本号
+const getLatestVersion = (plugin: Plugin): string | null => {
+  if (!plugin.versions || plugin.versions.length === 0) {
+    return null
+  }
+  return plugin.versions[0].name
+}
+
+// 获取可更新的版本列表（比当前安装版本新的版本）
+const getAvailableUpdates = (plugin: Plugin) => {
+  if (!plugin.versions || !plugin.installed_version) {
+    return []
+  }
+  // 返回所有比当前版本新的版本（在数组中位置靠前的）
+  const installedIndex = plugin.versions.findIndex(v => v.name === plugin.installed_version)
+  if (installedIndex <= 0) {
+    return plugin.versions.slice(0, 1) // 只返回最新版本
+  }
+  return plugin.versions.slice(0, installedIndex)
+}
+
 // 检查是否有更新
 const hasUpdate = (plugin: Plugin): boolean => {
   if (!plugin.is_installed || !plugin.installed_version) {
     return false
   }
-  if (!plugin.latest_version || plugin.latest_version.length === 0) {
+  if (!plugin.versions || plugin.versions.length === 0) {
     return false
   }
-  const latestVersion = plugin.latest_version[0]?.name
-  // 简单的版本比较：如果版本号不同则认为有更新
+  const latestVersion = plugin.versions[0]?.name
   return latestVersion !== plugin.installed_version
 }
 
@@ -362,8 +436,16 @@ const handleInstall = (plugin: Plugin) => {
     emit('needLogin', plugin)
     return
   }
-  // 继续安装逻辑由父组件处理
-  emit('needLogin', plugin)
+  emit('install', plugin)
+}
+
+// 更新插件
+const handleUpdate = (plugin: Plugin) => {
+  if (!PluginAuth.isLoggedIn()) {
+    emit('needLogin', plugin)
+    return
+  }
+  emit('update', plugin)
 }
 
 // 卸载插件

@@ -14,8 +14,8 @@
         <span class="text-sm font-medium">{{ currentStepText }}</span>
         <span class="text-sm text-gray-500">{{ sse.progressPercent.value }}%</span>
       </div>
-      <el-progress 
-        :percentage="sse.progressPercent.value" 
+      <el-progress
+        :percentage="sse.progressPercent.value"
         :status="progressStatus"
         :stroke-width="15"
         :striped="sse.isProcessing.value"
@@ -38,7 +38,7 @@
         <span v-if="sse.error.value" class="text-red-500 text-sm">{{ sse.error.value }}</span>
         <span v-else-if="sse.isSuccess.value" class="text-green-500 text-sm">{{ successText }}</span>
         <span v-else class="text-gray-500 text-sm">{{ sse.isProcessing.value ? processingText : '' }}</span>
-        
+
         <div>
           <el-button v-if="!sse.isProcessing.value" @click="handleClose">关闭</el-button>
           <el-button v-if="sse.isProcessing.value" type="danger" @click="handleCancel">取消</el-button>
@@ -59,7 +59,7 @@ import type { Plugin } from './type'
 // Props
 const props = defineProps<{
   plugin: Plugin | null
-  mode?: 'install' | 'uninstall'  // 模式：安装或卸载
+  mode?: 'install' | 'update' | 'uninstall'  // 模式：安装、更新或卸载
 }>()
 
 // 使用 defineModel 实现 v-model
@@ -76,19 +76,37 @@ const sse = useSse()
 
 // 当前模式
 const currentMode = computed(() => props.mode || 'install')
-const isInstall = computed(() => currentMode.value === 'install')
+const isInstallOrUpdate = computed(() => currentMode.value === 'install' || currentMode.value === 'update')
+const isUpdate = computed(() => currentMode.value === 'update')
 
 // 动态文本
-const dialogTitle = computed(() => isInstall.value ? '插件安装' : '插件卸载')
-const successText = computed(() => isInstall.value ? '安装完成' : '卸载完成')
-const processingText = computed(() => isInstall.value ? '正在安装...' : '正在卸载...')
-const waitingText = computed(() => isInstall.value ? '处理中，请稍候...' : '卸载中，请稍候...')
+const dialogTitle = computed(() => {
+  if (currentMode.value === 'install') return '插件安装'
+  if (currentMode.value === 'update') return '插件更新'
+  return '插件卸载'
+})
+const successText = computed(() => {
+  if (currentMode.value === 'install') return '安装完成'
+  if (currentMode.value === 'update') return '更新完成'
+  return '卸载完成'
+})
+const processingText = computed(() => {
+  if (currentMode.value === 'install') return '正在安装...'
+  if (currentMode.value === 'update') return '正在更新...'
+  return '正在卸载...'
+})
+const waitingText = computed(() => {
+  if (currentMode.value === 'install') return '处理中，请稍候...'
+  if (currentMode.value === 'update') return '更新中，请稍候...'
+  return '卸载中，请稍候...'
+})
 
 // 步骤文本映射
 const installStepTextMap: Record<string, string> = {
   download: '下载插件',
   extract: '解压插件',
   resolve: '解析插件',
+  hook: '执行安装 Hook',
   composer: 'Composer 安装',
   npm: 'NPM 安装',
 }
@@ -99,14 +117,31 @@ const uninstallStepTextMap: Record<string, string> = {
   cleanup: '清理文件',
 }
 
-// 安装/卸载步骤顺序
-const installSteps = ['download', 'extract', 'resolve', 'composer', 'npm']
+// 安装/卸载步骤顺序（根据类型动态调整）
+const libraryInstallSteps = ['composer', 'npm']
+const downloadInstallSteps = ['download', 'extract', 'resolve', 'hook', 'npm']
 const uninstallSteps = ['hook', 'composer', 'cleanup']
+
+// 获取插件类型字符串
+const getPluginTypeString = (plugin: Plugin | null): string => {
+  if (!plugin) return 'library'
+  return plugin.type || 'library'
+}
+
+// 根据插件类型获取安装步骤
+const getInstallSteps = (plugin: Plugin | null): string[] => {
+  const typeStr = getPluginTypeString(plugin)
+  return typeStr === 'library' ? libraryInstallSteps : downloadInstallSteps
+}
 
 const currentStepText = computed(() => {
   if (sse.isSuccess.value) return successText.value
-  if (sse.error.value) return isInstall.value ? '安装失败' : '卸载失败'
-  const stepMap = isInstall.value ? installStepTextMap : uninstallStepTextMap
+  if (sse.error.value) {
+    if (currentMode.value === 'install') return '安装失败'
+    if (currentMode.value === 'update') return '更新失败'
+    return '卸载失败'
+  }
+  const stepMap = isInstallOrUpdate.value ? installStepTextMap : uninstallStepTextMap
   return stepMap[sse.progress.value.step] || '准备中...'
 })
 
@@ -126,24 +161,29 @@ const startInstall = () => {
     return
   }
 
+  // 获取插件类型
+  const pluginType = getPluginTypeString(props.plugin)
+  const steps = getInstallSteps(props.plugin)
+
+  // 使用用户选择的版本，如果没有则使用最新版本
+  const selectedVersion = props.plugin.selected_version || props.plugin.versions?.[0]?.name || ''
+
   const params = new URLSearchParams({
     token,
     id: props.plugin.id,
     name: props.plugin.mark || '',
-    version: props.plugin.latest_version[0]?.name || ''
+    version: selectedVersion,
+    type: pluginType
   })
 
   const url = `/api/plugins/install-stream?${params.toString()}`
 
   sse.connect(url, {
-    steps: installSteps,
+    steps: steps,
     handlers: {
       onComplete: () => {
         sse.addLog(successText.value + '！', 'success')
         emit('success', props.plugin!)
-      },
-      onError: (message: string) => {
-        emit('error', message)
       }
     }
   })
@@ -169,9 +209,6 @@ const startUninstall = () => {
       onComplete: () => {
         sse.addLog(successText.value + '！', 'success')
         emit('success', props.plugin!)
-      },
-      onError: (message: string) => {
-        emit('error', message)
       }
     }
   })
@@ -179,15 +216,25 @@ const startUninstall = () => {
 
 // 取消操作确认
 const handleCancel = () => {
-  const message = isInstall.value 
-    ? '取消安装不会中断后台进程，已执行的操作将保留。确定要取消吗？' 
-    : '取消卸载不会中断后台进程，已执行的操作将保留。确定要取消吗？'
-  
+  let message = '取消操作不会中断后台进程，已执行的操作将保留。确定要取消吗？'
+  let cancelLog = '操作已取消'
+
+  if (currentMode.value === 'install') {
+    message = '取消安装不会中断后台进程，已执行的操作将保留。确定要取消吗？'
+    cancelLog = '安装已取消'
+  } else if (currentMode.value === 'update') {
+    message = '取消更新不会中断后台进程，已执行的操作将保留。确定要取消吗？'
+    cancelLog = '更新已取消'
+  } else {
+    message = '取消卸载不会中断后台进程，已执行的操作将保留。确定要取消吗？'
+    cancelLog = '卸载已取消'
+  }
+
   Message.confirm(message, () => {
     // 用户确认取消
     sse.disconnect()
     sse.error.value = '已取消'
-    sse.addLog(isInstall.value ? '安装已取消' : '卸载已取消', 'error')
+    sse.addLog(cancelLog, 'error')
     // 关闭弹窗
     visible.value = false
   }).catch(() => {
@@ -205,7 +252,7 @@ const handleClose = () => {
 // 开始执行
 const start = () => {
   sse.reset()
-  if (isInstall.value) {
+  if (isInstallOrUpdate.value) {
     startInstall()
   } else {
     startUninstall()

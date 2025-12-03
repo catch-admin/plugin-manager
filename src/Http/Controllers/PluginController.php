@@ -37,6 +37,8 @@ class PluginController extends Controller
             throw new FailedException('登录失败');
         }
 
+        $result['data']['token'] = base64_encode($result['data']['token']);
+
         return $result['data'];
     }
 
@@ -115,10 +117,8 @@ class PluginController extends Controller
         $result = $this->pluginApi->getPlugins($token, $filters);
 
         if ($result['success']) {
-            // 标记已安装状态
-            $pluginManager = new InstalledPluginManager();
-
-            $data = collect($result['data']['data'])->map(function ($plugin) use ($pluginManager) {
+            $data = collect($result['data']['data'])->map(function ($plugin) {
+                $pluginManager = new InstalledPluginManager();
                 // 通过 plugin_id 检查是否已安装
                 $plugin['is_installed'] = $pluginManager->isInstalledById((string) $plugin['id']);
 
@@ -129,6 +129,7 @@ class PluginController extends Controller
                     $plugin['installed_at'] = $localInfo['installed_at'] ?? null;
                     $plugin['composer_name'] = $localInfo['name'] ?? null; // Composer 包名
                 }
+                $plugin['detail_url'] = config('plugin.plugin_host') . '/plugins/s/' . $plugin['id'];
 
                 return $plugin;
             })->toArray();
@@ -177,10 +178,10 @@ class PluginController extends Controller
         $token = $request->get('token');
         $id = $request->get('id');
         $version = $request->get('version');
-
         $name = $request->get('name'); // Composer 包名
+        $type = $request->get('type', 'library'); // 插件类型
 
-        return SseResponse::create(function (SseResponse $sse) use ($token, $id, $name, $version) {
+        return SseResponse::create(function (SseResponse $sse) use ($token, $id, $name, $version, $type) {
             if (!$token) {
                 $sse->error('认证信息丢失');
                 return;
@@ -191,19 +192,22 @@ class PluginController extends Controller
                 return;
             }
 
-            if (!$this->pluginApi->checkPermission($token, $id)) {
+            if (!$this->pluginApi->checkPermission($token, $id, $version)) {
                 $sse->error('😭暂无安装权限, 请到官网购买该插件之后再来安装');
                 return;
             }
 
             $sse->log('开始安装插件...');
+            $sse->log('插件类型: ' . $type, 'info');
 
             $result = $this->installService->install(
                 $name,       // Composer 包名
                 $version,    // 版本
                 $id,         // 插件 ID（用于记录）
                 fn($step, $percent, $message) => $sse->progress($step, $percent, $message),
-                fn($message, $type) => $sse->log($message, $type)
+                fn($message, $type) => $sse->log($message, $type),
+                $type,       // 插件类型
+                $token       // 认证 Token（下载时需要）
             );
 
             $sse->complete($result);

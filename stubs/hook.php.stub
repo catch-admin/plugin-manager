@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace {{namespace}};
 
+use Catch\Support\Plugin\Plugin;
+
 /**
  * 插件生命周期 Hook
  * 
+ * $context 包含以下信息：
+ * - plugin_path: 插件目录路径
+ * - module: 模块名（module 类型专用）
+ * - version: 版本号
+ * - composer_data: composer.json 数据
+ * 
  * 方法说明：
- * - beforeInstall: 安装前（可阻止安装，不可用 Laravel）
+ * - beforeInstall: 安装前（可阻止安装）
  * - afterInstall: 安装后（可使用 Laravel）
  * - beforeUpdate: 更新前（可使用 Laravel）
  * - afterUpdate: 更新后（可使用 Laravel）
@@ -20,7 +28,7 @@ class Hook
     /**
      * 安装前执行（可阻止安装）
      */
-    public static function beforeInstall(array $pluginInfo): void
+    public static function beforeInstall(array $context): void
     {
         // 验证条件，抛出异常可阻止安装
         // throw new \RuntimeException('不满足安装条件');
@@ -28,25 +36,44 @@ class Hook
 
     /**
      * 安装后执行（可使用 Laravel）
+     * 
+     * 对于 module 类型，这里是发布模块的地方
      */
-    public static function afterInstall(array $pluginInfo): void
+    public static function afterInstall(array $context): void
     {
+        $pluginPath = $context['plugin_path'];
+        
+        // ========== Module 类型示例 ==========
+        // $moduleName = $context['module'] ?? '';
+        // if ($moduleName) {
+        //     // 发布模块到 modules 目录
+        //     Plugin::publishModule(
+        //         $pluginPath . '/resource/' . $moduleName,
+        //         $moduleName
+        //     );
+        //     
+        //     // 发布视图到 web/src/views 目录
+        //     Plugin::publishView(
+        //         $pluginPath . '/resource/view/' . $moduleName,
+        //         $moduleName
+        //     );
+        //     
+        //     // 执行数据库迁移
+        //     Plugin::migrate($pluginPath . '/resource/' . $moduleName . '/database/migrations');
+        // }
+        
+        // ========== Library/Plugin 类型示例 ==========
         // 运行数据库迁移
         // \Illuminate\Support\Facades\Artisan::call('migrate', [
         //     '--path' => 'vendor/{{name}}/database/migrations',
         //     '--force' => true,
-        // ]);
-
-        // 发布配置文件
-        // \Illuminate\Support\Facades\Artisan::call('vendor:publish', [
-        //     '--tag' => 'my-plugin-config',
         // ]);
     }
 
     /**
      * 更新前执行（可使用 Laravel）
      */
-    public static function beforeUpdate(array $pluginInfo): void
+    public static function beforeUpdate(array $context): void
     {
         // 备份数据等
     }
@@ -54,34 +81,33 @@ class Hook
     /**
      * 更新后执行（可使用 Laravel）
      */
-    public static function afterUpdate(array $pluginInfo): void
+    public static function afterUpdate(array $context): void
     {
         // 运行新版本的迁移
-        // \Illuminate\Support\Facades\Artisan::call('migrate', [
-        //     '--path' => 'vendor/{{name}}/database/migrations',
-        //     '--force' => true,
-        // ]);
     }
 
     /**
      * 卸载前执行（可使用 Laravel）
      */
-    public static function beforeUninstall(array $pluginInfo): void
+    public static function beforeUninstall(array $context): void
     {
         // 备份数据
-        // 清理配置缓存
-        // \Illuminate\Support\Facades\Artisan::call('config:clear');
     }
 
     /**
      * 卸载后执行
+     * 
+     * 对于 module 类型，这里是删除模块的地方
      */
-    public static function afterUninstall(array $pluginInfo): void
+    public static function afterUninstall(array $context): void
     {
-        // 回滚数据库迁移
-        // \Illuminate\Support\Facades\Artisan::call('migrate:rollback', [
-        //     '--path' => 'vendor/{{name}}/database/migrations',
-        //     '--force' => true,
-        // ]);
+        // ========== Module 类型示例 ==========
+        // $moduleName = $context['module'] ?? '';
+        // if ($moduleName) {
+        //     // 删除模块
+        //     Plugin::deleteModule($moduleName);
+        //     // 删除视图
+        //     Plugin::deleteView($moduleName);
+        // }
     }
 }

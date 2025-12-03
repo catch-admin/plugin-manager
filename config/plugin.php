@@ -9,7 +9,7 @@ return [
    | 插件服务端 HOST
    |
    */
-    'plugin_host' => env('PLUGIN_HOST', 'https://catchadmin.vip/api'),
+    'plugin_host' => env('PLUGIN_HOST', 'https://catchadmin.vip'),
 
     /*
     |--------------------------------------------------------------------------
@@ -19,27 +19,27 @@ return [
     | 插件存放的根目录，相对于 storage 目录
     |
     */
-    'directory' => env('PLUGIN_DIRECTORY', 'plugins'),
+    'directory' => env('PLUGIN_DIRECTORY', 'packages'),
 
     /*
     |--------------------------------------------------------------------------
     | 插件目录（完整路径）
     |--------------------------------------------------------------------------
     |
-    | 插件存放的完整路径（storage/plugins）
+    | 插件存放的完整路径（storage/packages）
     |
     */
-    'path' => storage_path(env('PLUGIN_DIRECTORY', 'plugins')),
+    'path' => storage_path(env('PLUGIN_DIRECTORY', 'packages')),
 
     /*
     |--------------------------------------------------------------------------
     | 插件开始目录（完整路径）
     |--------------------------------------------------------------------------
     |
-    | 插件存放的开发完整路径（plugins）
+    | 插件存放的开发完整路径（packages）
     |
     */
-    'develop' => base_path(env('PLUGIN_DIRECTORY', 'plugins')),
+    'develop' => base_path(env('PLUGIN_DIRECTORY', 'packages')),
 
     /*
     |--------------------------------------------------------------------------
@@ -49,7 +49,7 @@ return [
     | 插件打包后的 zip 文件存放目录
     |
     */
-    'dist_directory' => base_path(env('PLUGIN_DIST_DIRECTORY', 'plugins')),
+    'dist_directory' => base_path(env('PLUGIN_DIST_DIRECTORY', 'packages')),
 
     /*
     |--------------------------------------------------------------------------

@@ -41,11 +41,11 @@ class InstallCommand extends Command
         $composer = app(Composer::class)->setWorkingPath(base_path());
 
         $composer->modify(function ($composer){
-            $repositories = $composer['repositories'];
+            $repositories = $composer['repositories'] ?? [];
 
             $addRepository = [
-                'type' => 'path',
-                'url' => 'storage/plugins/*/*'
+                'type' => 'composer',
+                'url' => config('plugin.plugin_host') . '/' . 'plugin'
             ];
 
             $isExist = false;

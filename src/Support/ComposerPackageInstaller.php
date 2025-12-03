@@ -37,7 +37,8 @@ class ComposerPackageInstaller
     {
         $package = "{$packageName}:{$version}";
 
-        $command = $this->findComposer() . " require {$package} --ignore-platform-reqs --no-interaction --no-ansi";
+        $devFlag = $dev ? ' --dev' : '';
+        $command = $this->findComposer() . " require {$package}{$devFlag} --ignore-platform-reqs --no-interaction --no-ansi";
 
         return $this->runComposerCommand($command, $callback);
     }
@@ -87,7 +88,6 @@ class ComposerPackageInstaller
      */
     protected function runComposerCommand(string $command, ?callable $callback = null): bool
     {
-        Log::info(json_encode(json_decode(file_get_contents(base_path('auth.json')), true)));
         $result = Terminal::command($command)
                     ->setProcessEnv([
                         'COMPOSER_AUTH' => json_encode(json_decode(file_get_contents(base_path('auth.json')), true))

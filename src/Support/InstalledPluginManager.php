@@ -80,6 +80,7 @@ class InstalledPluginManager
         $plugins[$data['name']] = [
             'plugin_id' => $data['plugin_id'] ?? '',
             'version' => $data['version'] ?? '',
+            'type' => $data['type'] ?? 'library',
             'path' => $data['path'] ?? '',
             'installed_at' => date('Y-m-d H:i:s'),
         ];
