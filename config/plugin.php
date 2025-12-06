@@ -117,5 +117,5 @@ return [
     | 记录已安装插件信息的 JSON 文件路径
     |
     */
-    'installed_file' => storage_path(env('PLUGIN_INSTALLED_FILE', 'plugins/plugins.json')),
+    'installed_file' => storage_path(env('PLUGIN_INSTALLED_FILE', 'packages/plugins.json')),
 ];
