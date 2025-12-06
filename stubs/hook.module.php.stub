@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace {{namespace}};
 
-use Catch\Support\Plugin\Plugin;
+use Catch\Plugin\Support\Plugin;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
@@ -18,7 +18,6 @@ class Hook
     {
         $pluginPath = $context['plugin_path'];
         $moduleName = $context['module'];
-        $composerData = $context['composer_data'] ?? [];
 
         // 发布模块
         Plugin::publishModule($pluginPath . '/resource/' . $moduleName, $moduleName);

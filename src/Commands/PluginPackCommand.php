@@ -3,6 +3,7 @@
 namespace Catch\Plugin\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Number;
 use Illuminate\Support\Str;
@@ -30,7 +31,7 @@ class PluginPackCommand extends Command
             return self::FAILURE;
         }
 
-        $pluginPath = config('plugin.develop') . '/' . $name;
+        $pluginPath = config('plugin.develop') . DIRECTORY_SEPARATOR . $name;
 
         if (!File::isDirectory($pluginPath)) {
             $this->error("插件目录不存在: {$pluginPath}");
@@ -38,7 +39,7 @@ class PluginPackCommand extends Command
         }
 
         // 读取 composer.json
-        $composerPath = $pluginPath . '/composer.json';
+        $composerPath = $pluginPath . DIRECTORY_SEPARATOR . 'composer.json';
         if (!File::exists($composerPath)) {
             $this->error('插件缺少 composer.json');
             return self::FAILURE;
@@ -158,6 +159,7 @@ class PluginPackCommand extends Command
 
     /**
      * 选择插件
+     * @throws FileNotFoundException
      */
     protected function selectPlugin(): ?string
     {
@@ -181,11 +183,20 @@ class PluginPackCommand extends Command
                 continue;
             }
 
+            // 查找第一层目录
+            if (File::exists($vendorDir . DIRECTORY_SEPARATOR . 'composer.json')) {
+                $data = json_decode(File::get($vendorDir . DIRECTORY_SEPARATOR . 'composer.json'), true);
+                $name = $data['name'] ?? basename($vendorDir) . DIRECTORY_SEPARATOR . basename($vendorDir);
+                $title = $data['title'] ?? $name;
+                $plugins[$name] = $title . ' (' . $name . ')';
+            }
+
+            // 查找第二层目录
             foreach (File::directories($vendorDir) as $packageDir) {
-                $composerPath = $packageDir . '/composer.json';
+                $composerPath = $packageDir .  DIRECTORY_SEPARATOR .'composer.json';
                 if (File::exists($composerPath)) {
                     $data = json_decode(File::get($composerPath), true);
-                    $name = $data['name'] ?? basename($vendorDir) . '/' . basename($packageDir);
+                    $name = $data['name'] ?? basename($vendorDir) . DIRECTORY_SEPARATOR . basename($packageDir);
                     $title = $data['title'] ?? $name;
                     $plugins[$name] = $title . ' (' . $name . ')';
                 }

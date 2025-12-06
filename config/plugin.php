@@ -107,7 +107,7 @@ return [
     | 下载和解压插件时的临时目录
     |
     */
-    'temp_directory' => storage_path(env('PLUGIN_TEMP_DIRECTORY', 'static')),
+    'temp_directory' => storage_path(env('PLUGIN_TEMP_DIRECTORY', 'static') . DIRECTORY_SEPARATOR . 'plugins'),
 
     /*
     |--------------------------------------------------------------------------

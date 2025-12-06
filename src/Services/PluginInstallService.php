@@ -2,7 +2,6 @@
 
 namespace Catch\Plugin\Services;
 
-use Catch\Exceptions\FailedException;
 use Catch\Plugin\Enums\PluginType;
 use Catch\Plugin\Exceptions\ComposerException;
 use Catch\Plugin\Exceptions\InstallFailedException;
@@ -16,6 +15,7 @@ use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\File;
 use ZipArchive;
 use Catch\Plugin\Exceptions\DownloadFailedException;
+use Throwable;
 
 /**
  * 插件安装服务
@@ -144,6 +144,7 @@ class PluginInstallService
      * @throws DownloadFailedException
      * @throws NpmPackageException
      * @throws FileNotFoundException
+     * @throws Throwable
      */
     protected function installByDownload(
         string $packageName,
@@ -194,8 +195,8 @@ class PluginInstallService
 
         if (!$extractResult) {
             // 清理临时文件
-            @unlink($tempFile);
-            throw new DownloadFailedException('插件解压失败，请检查磁盘空间是否充足或联系管理员');
+            File::delete($tempFile);
+            throw new DownloadFailedException('插件解压失败，请检查磁盘空间是否充足');
         }
 
         // 查找实际的插件目录（可能在 zip 内有一层目录）
@@ -212,76 +213,85 @@ class PluginInstallService
         // 移动到目标目录
         File::moveDirectory($pluginSourceDir, $targetDir);
 
-        $onProgress('extract', 100, '解压完成');
-        $onLog('插件解压到: ' . $targetDir, 'success');
+        try {
+            $onProgress('extract', 100, '解压完成');
+            $onLog('插件解压到: ' . $targetDir, 'success');
 
-        // 步骤 3: 解析插件信息
-        $onProgress('resolve', 0, '正在解析插件信息...');
+            // 步骤 3: 解析插件信息
+            $onProgress('resolve', 0, '正在解析插件信息...');
 
-        $composerData = $this->hookExecutor->getComposerData($targetDir);
+            $composerData = $this->hookExecutor->getComposerData($targetDir);
 
-        if (!$composerData) {
-            $onLog('警告: 未找到 composer.json 文件', 'warning');
-        } else {
-            $onLog('插件名称: ' . ($composerData['title'] ?? $composerData['name'] ?? '未知'), 'info');
-            $onLog('插件版本: ' . ($composerData['version'] ?? $version), 'info');
+            if (!$composerData) {
+                $onLog('警告: 未找到 composer.json 文件', 'warning');
+            } else {
+                $onLog('插件名称: ' . ($composerData['title'] ?? $composerData['name'] ?? '未知'), 'info');
+                $onLog('插件版本: ' . ($composerData['version'] ?? $version), 'info');
+            }
+
+            $onProgress('resolve', 100, '解析完成');
+
+            // 执行安装 Hook
+            $context = [
+                'plugin_path' => $targetDir,
+                'composer_data' => $composerData,
+                'version' => $version,
+                'plugin_id' => $pluginId,
+                'type' => $type,
+                'module' => $composerData['extra']['module'] ?? null,
+            ];
+
+            $beforeResult = $this->hookExecutor->executeBefore($targetDir, $context);
+            if (!$beforeResult) {
+                // File::deleteDirectory($targetDir);
+                throw new DownloadFailedException('插件安装检查未通过');
+            }
+
+            $this->hookExecutor->executeAfter($targetDir, $context);
+
+            // Composer 依赖安装
+            $this->installComposerDependencies($composerData, $onProgress, $onLog);
+
+            // NPM 安装（如果插件有 package.json）
+            $packageJsonPath = $targetDir . '/package.json';
+            if (File::exists($packageJsonPath)) {
+                $onProgress('npm', 0, '正在执行 NPM 依赖安装...');
+                $onLog('检测到 package.json，开始安装 NPM 依赖...', 'info');
+                $this->npmInstaller->installFromPackageJson($packageJsonPath, $onLog);
+                $onProgress('npm', 100, 'NPM 依赖安装完成');
+            }
+
+            // 静默清理临时文件和目录
+            if (File::exists($tempFile)) {
+                File::delete($tempFile);
+            }
+
+            if (File::exists($tempExtractDir)) {
+                File::deleteDirectory($tempExtractDir);
+            }
+
+            // 记录已安装插件
+            $this->pluginManager->add([
+                'name' => $packageName,
+                'plugin_id' => $pluginId,
+                'version' => $version,
+                'type' => $type,
+                'path' => $targetDir,
+            ]);
+
+            return [
+                'success' => true,
+                'package' => $packageName,
+                'version' => $version,
+                'path' => $targetDir,
+            ];
+        } catch (Throwable $e) {
+            //File::delete($tempFile);
+            //File::deleteDirectory($tempExtractDir);
+            //File::deleteDirectory($targetDir);
+
+            throw $e;
         }
-
-        $onProgress('resolve', 100, '解析完成');
-
-        // 执行安装 Hook
-        $context = [
-            'plugin_path' => $targetDir,
-            'composer_data' => $composerData,
-            'version' => $version,
-            'plugin_id' => $pluginId,
-            'type' => $type,
-            'module' => $composerData['extra']['module'] ?? null,
-        ];
-
-        $beforeResult = $this->hookExecutor->executeBefore($targetDir, $context);
-        if (!$beforeResult) {
-            File::deleteDirectory($targetDir);
-            throw new DownloadFailedException('插件安装检查未通过');
-        }
-
-        $this->hookExecutor->executeAfter($targetDir, $context);
-
-        // Composer 依赖安装
-        $this->installComposerDependencies($composerData, $onProgress, $onLog);
-
-        // NPM 安装（如果插件有 package.json）
-        $packageJsonPath = $targetDir . '/package.json';
-        if (file_exists($packageJsonPath)) {
-            $onProgress('npm', 0, '正在执行 NPM 依赖安装...');
-            $onLog('检测到 package.json，开始安装 NPM 依赖...', 'info');
-            $this->npmInstaller->installFromPackageJson($packageJsonPath, $onLog);
-            $onProgress('npm', 100, 'NPM 依赖安装完成');
-        }
-
-        // 静默清理临时文件和目录
-        if (file_exists($tempFile)) {
-            @unlink($tempFile);
-        }
-        if (File::exists($tempExtractDir)) {
-            File::deleteDirectory($tempExtractDir);
-        }
-
-        // 记录已安装插件
-        $this->pluginManager->add([
-            'name' => $packageName,
-            'plugin_id' => $pluginId,
-            'version' => $version,
-            'type' => $type,
-            'path' => $targetDir,
-        ]);
-
-        return [
-            'success' => true,
-            'package' => $packageName,
-            'version' => $version,
-            'path' => $targetDir,
-        ];
     }
 
     /**
@@ -295,7 +305,7 @@ class PluginInstallService
         // 过滤掉 php 和 ext-* 依赖
         $filterDependencies = function (array $deps): array {
             return array_filter($deps, function ($key) {
-                return !str_starts_with($key, 'php') && !str_starts_with($key, 'ext-');
+                return ! str_starts_with($key, 'php') && ! str_starts_with($key, 'ext-');
             }, ARRAY_FILTER_USE_KEY);
         };
 
@@ -342,7 +352,7 @@ class PluginInstallService
      */
     protected function extractZip(string $zipFile, string $extractTo): bool
     {
-        $zip = new ZipArchive();
+        $zip = new \ZipArchive();
 
         if ($zip->open($zipFile) !== true) {
             return false;
@@ -409,17 +419,16 @@ class PluginInstallService
             }
 
             $onProgress('check', 100, '插件信息确认');
-            $onLog('插件类型: ' . ($pluginInfo['type'] ?? 'library'), 'info');
 
             // 根据插件类型选择卸载方式
             $pluginType = $pluginInfo['type'] ?? PluginType::Library->value;
 
             if ($pluginType === PluginType::Library->value) {
-                return $this->uninstallByComposer($name, $pluginInfo, $onProgress, $onLog);
+                return $this->uninstallByComposer($name, $onProgress, $onLog);
             }
 
             // 非 Library 类型通过删除目录卸载
-            return $this->uninstallByDelete($name, $pluginInfo, $onProgress, $onLog);
+            return $this->uninstallByDelete($name, $pluginInfo, $onProgress);
         } catch (\Throwable $e) {
             throw new UnInstallFailedException($e->getMessage());
         }
@@ -429,14 +438,14 @@ class PluginInstallService
      * 通过 Composer 卸载插件（Library 类型）
      *
      * @param string $name 包名
-     * @param array $pluginInfo 插件信息
      * @param callable $onProgress 进度回调
      * @param callable $onLog 日志回调
      * @return array
+     * @throws ComposerException
+     * @throws FileNotFoundException
      */
     protected function uninstallByComposer(
         string $name,
-        array $pluginInfo,
         callable $onProgress,
         callable $onLog
     ): array {
@@ -460,15 +469,13 @@ class PluginInstallService
      * @param string $name 包名
      * @param array $pluginInfo 插件信息
      * @param callable $onProgress 进度回调
-     * @param callable $onLog 日志回调
      * @return array
-     * @throws \Exception
+     * @throws FileNotFoundException
      */
     protected function uninstallByDelete(
         string $name,
         array $pluginInfo,
-        callable $onProgress,
-        callable $onLog
+        callable $onProgress
     ): array {
         $pluginPath = $pluginInfo['path'] ?? '';
 

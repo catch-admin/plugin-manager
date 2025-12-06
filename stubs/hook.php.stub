@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace {{namespace}};
 
-use Catch\Support\Plugin\Plugin;
+use Catch\Plugin\Support\Plugin;
 
 /**
  * 插件生命周期 Hook
- * 
+ *
  * $context 包含以下信息：
  * - plugin_path: 插件目录路径
  * - module: 模块名（module 类型专用）
  * - version: 版本号
  * - composer_data: composer.json 数据
- * 
+ *
  * 方法说明：
  * - beforeInstall: 安装前（可阻止安装）
  * - afterInstall: 安装后（可使用 Laravel）
@@ -36,13 +36,13 @@ class Hook
 
     /**
      * 安装后执行（可使用 Laravel）
-     * 
+     *
      * 对于 module 类型，这里是发布模块的地方
      */
     public static function afterInstall(array $context): void
     {
         $pluginPath = $context['plugin_path'];
-        
+
         // ========== Module 类型示例 ==========
         // $moduleName = $context['module'] ?? '';
         // if ($moduleName) {
@@ -51,17 +51,17 @@ class Hook
         //         $pluginPath . '/resource/' . $moduleName,
         //         $moduleName
         //     );
-        //     
+        //
         //     // 发布视图到 web/src/views 目录
         //     Plugin::publishView(
         //         $pluginPath . '/resource/view/' . $moduleName,
         //         $moduleName
         //     );
-        //     
+        //
         //     // 执行数据库迁移
         //     Plugin::migrate($pluginPath . '/resource/' . $moduleName . '/database/migrations');
         // }
-        
+
         // ========== Library/Plugin 类型示例 ==========
         // 运行数据库迁移
         // \Illuminate\Support\Facades\Artisan::call('migrate', [
@@ -96,7 +96,7 @@ class Hook
 
     /**
      * 卸载后执行
-     * 
+     *
      * 对于 module 类型，这里是删除模块的地方
      */
     public static function afterUninstall(array $context): void

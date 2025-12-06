@@ -198,7 +198,6 @@ class PluginController extends Controller
             }
 
             $sse->log('开始安装插件...');
-            $sse->log('插件类型: ' . $type, 'info');
 
             $result = $this->installService->install(
                 $name,       // Composer 包名
