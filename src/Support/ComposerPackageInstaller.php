@@ -54,7 +54,20 @@ class ComposerPackageInstaller
         $devFlag = $dev ? ' --dev' : '';
         $command = $this->findComposer() . " require {$package}{$devFlag} --ignore-platform-reqs --no-interaction --no-ansi --no-cache";
 
-        return $this->runComposerCommand($command, $callback);
+        try {
+            return $this->runComposerCommand($command, $callback);
+        } catch (ComposerException $e) {
+            $this->composer->modify(function ($composerJson) use ($packageName, $version){
+                if (isset($composerJson['require'][$packageName])) {
+                    if ($composerJson['require'][$packageName] == $version) {
+                        unset($composerJson['require'][$packageName]);
+                    }
+                }
+
+                return $composerJson;
+            });
+            throw new ComposerException($e->getMessage());
+        }
     }
 
     /**
