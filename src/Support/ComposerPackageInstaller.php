@@ -5,7 +5,7 @@ namespace Catch\Plugin\Support;
 use Catch\Plugin\Exceptions\ComposerException;
 use Catch\Support\Terminal;
 use Illuminate\Support\Composer;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * Composer 包安装器
@@ -16,11 +16,25 @@ class ComposerPackageInstaller
 {
     protected Composer $composer;
 
+    protected ?string $token = null;
     public function __construct(?Composer $composer = null)
     {
         $this->composer = $composer ?? app(Composer::class);
 
         $this->composer->setWorkingPath(base_path());
+    }
+
+    /**
+     * 设置 token
+     *
+     * @param string $token
+     * @return $this
+     */
+    public function token(string $token): static
+    {
+        $this->token = $token;
+
+        return $this;
     }
 
     /**
@@ -38,7 +52,7 @@ class ComposerPackageInstaller
         $package = "{$packageName}:{$version}";
 
         $devFlag = $dev ? ' --dev' : '';
-        $command = $this->findComposer() . " require {$package}{$devFlag} --ignore-platform-reqs --no-interaction --no-ansi";
+        $command = $this->findComposer() . " require {$package}{$devFlag} --ignore-platform-reqs --no-interaction --no-ansi --no-cache";
 
         return $this->runComposerCommand($command, $callback);
     }
@@ -88,14 +102,31 @@ class ComposerPackageInstaller
      */
     protected function runComposerCommand(string $command, ?callable $callback = null): bool
     {
+        $env = [];
+
+        // 默认设置
+        if ($this->token) {
+            $env['COMPOSER_AUTH'] = json_encode([
+                'bearer' => [
+                    parse_url(config('plugin.plugin_host'), PHP_URL_HOST) => $this->token,
+                ]
+            ]);
+        }
+
         $result = Terminal::command($command)
-                    ->setProcessEnv([
-                        'COMPOSER_AUTH' => json_encode(json_decode(file_get_contents(base_path('auth.json')), true))
-                    ])
-                    ->run($callback);
+            ->setProcessEnv($env)
+            ->run($callback);
 
         if (! $result->successful()) {
-            throw new ComposerException("{$command} 执行失败");
+            if (Str::of($result->errorOutput())->contains('HTTP 401')) {
+                throw new ComposerException("没有权限安装该扩展，请确认是否已购买?");
+            }
+
+            if (Str::of($result->errorOutput())->contains('HTTP 404')) {
+                throw new ComposerException("该扩展资源未找到，请联系官方");
+            }
+
+            throw new ComposerException("扩展安装失败");
         }
 
         return true;

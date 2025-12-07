@@ -72,7 +72,7 @@ class PluginInstallService
             $pluginType = PluginType::tryFrom($type) ?? PluginType::Library;
 
             if ($pluginType->isLibrary()) {
-                return $this->installByComposer($packageName, $version, $pluginId, $onProgress, $onLog);
+                return $this->installByComposer($packageName, $version, $pluginId, $onProgress, $onLog, $token);
             }
 
             // 非 Library 类型通过下载解压安装
@@ -90,21 +90,23 @@ class PluginInstallService
      * @param string $pluginId 插件 ID
      * @param callable $onProgress 进度回调
      * @param callable $onLog 日志回调
+     * @param string $token
      * @return array
      * @throws ComposerException
-     * @throws NpmPackageException
      * @throws FileNotFoundException
+     * @throws NpmPackageException
      */
     protected function installByComposer(
         string $packageName,
         string $version,
         string $pluginId,
         callable $onProgress,
-        callable $onLog
+        callable $onLog,
+        string $token
     ): array {
         // Composer 安装（Hook 由 composer-plugin 自动触发）
         $onProgress('composer', rand(10, 35), '正在执行 Composer 安装...');
-        $this->installer->install($packageName, $version, false, $onLog);
+        $this->installer->token(base64_decode($token))->install($packageName, $version, false, $onLog);
         $onProgress('composer', 100, 'Composer 安装完成');
 
         // NPM 安装（如果插件有 package.json）

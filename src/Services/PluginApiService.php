@@ -43,12 +43,13 @@ class PluginApiService
                 'password' => $password,
             ]);
 
-        if ($response->json('success')) {
-            $composerAuth = new ComposerAuth();
-            $composerAuth->token(config('plugin.plugin_host'), $response->json('data')['token']);
+        $data = $response->json();
+
+        if (! $data) {
+            throw new FailedException('登录失败, 请检查用户名和密码');
         }
 
-        return $response->json();
+        return $data;
     }
 
     /**

@@ -206,7 +206,7 @@ class PluginController extends Controller
                 fn($step, $percent, $message) => $sse->progress($step, $percent, $message),
                 fn($message, $type) => $sse->log($message, $type),
                 $type,       // 插件类型
-                $token       // 认证 Token（下载时需要）
+                $token      // 认证 Token（下载时需要）
             );
 
             $sse->complete($result);
