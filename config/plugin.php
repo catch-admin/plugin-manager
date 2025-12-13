@@ -118,4 +118,15 @@ return [
     |
     */
     'installed_file' => storage_path(env('PLUGIN_INSTALLED_FILE', 'packages/plugins.json')),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Composer 插件安装路径
+    |--------------------------------------------------------------------------
+    |
+    | catchadmin-plugin 类型包的安装目录
+    | 注意：此配置仅供 Laravel 命令使用，Composer 插件中使用固定路径
+    |
+    */
+    'install_path' => base_path(env('PLUGIN_INSTALL_PATH', 'vendor/catchadmin/plugins')),
 ];
