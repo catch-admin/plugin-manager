@@ -34,7 +34,7 @@ export class PluginAuth {
       if (!data) return null
 
       const authData: MarketAuthData = JSON.parse(data)
-      
+
       // 检查是否过期
       if (authData.expiresAt && Date.now() > authData.expiresAt) {
         this.clearAuth()

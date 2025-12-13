@@ -8,12 +8,12 @@
     -->
       <!-- 插件市场 -->
       <el-tab-pane label="插件市场" name="market">
-        <MarketPlugins 
-          ref="marketPluginsRef" 
+        <MarketPlugins
+          ref="marketPluginsRef"
           @needLogin="handleNeedLogin"
           @install="handleInstall"
           @update="handleUpdate"
-          @uninstall="handleUninstall" 
+          @uninstall="handleUninstall"
         />
       </el-tab-pane>
     </el-tabs>
@@ -40,12 +40,13 @@
 import { ref } from 'vue'
 import http from '@/support/http'
 import Message from '@/support/message'
-import { PluginAuth } from './pluginAuth'
+import { PluginAuth } from './pluginAuth.ts'
 import Login from './Login.vue'
 import LocalPlugins from './LocalPlugins.vue'
 import MarketPlugins from './MarketPlugins.vue'
 import PluginProgress from './PluginProgress.vue'
-import type { Plugin } from './type'
+
+import type { Plugin } from './type.ts'
 
 const activeTab = ref('market')
 const loginDialogVisible = ref(false)
@@ -149,7 +150,7 @@ const handleMarketLogin = async (form: { email: string; password: string }) => {
           doInstallPlugin(pendingPlugin.value)
         }
     })
-  } catch (error: any) {
+  } catch (error) {
     Message.error(error.response?.data?.message || '登录失败')
   } finally {
     loginLoading.value = false

@@ -320,8 +320,9 @@ import { Refresh } from '@element-plus/icons-vue'
 import { ElImageViewer } from 'element-plus'
 import http from '@/support/http'
 import Message from '@/support/message'
-import { PluginAuth } from './pluginAuth'
-import { Plugin } from './type'
+import { PluginAuth } from './pluginAuth.ts'
+import type { Plugin } from './type.ts'
+import Icon from '@/components/icon/index.vue'
 
 interface Emits {
     (e: 'needLogin', plugin: Plugin): void

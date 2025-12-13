@@ -74,6 +74,7 @@
 import { ref, onMounted } from 'vue'
 import http from '@/support/http'
 import Message from '@/support/message'
+import Icon from '@/components/icon/index.vue'
 
 interface Plugin {
   name: string

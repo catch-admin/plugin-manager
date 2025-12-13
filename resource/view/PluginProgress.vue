@@ -53,13 +53,13 @@ import { computed, watch } from 'vue'
 import { useSse } from '@/composables/useSse'
 import Terminal from '@/components/admin/terminal/index.vue'
 import Message from '@/support/message'
-import { PluginAuth } from './pluginAuth'
-import type { Plugin } from './type'
+import { PluginAuth } from './pluginAuth.ts'
+import type { Plugin } from './type.ts'
 
 // Props
 const props = defineProps<{
     plugin: Plugin | null
-    mode?: 'install' | 'update' | 'uninstall'  // 模式：安装、更新或卸载
+    mode?: 'install' | 'update' | 'uninstall'
 }>()
 
 // 使用 defineModel 实现 v-model
