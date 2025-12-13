@@ -198,4 +198,168 @@ class Plugin
     {
         DeleteModuleMenusEvent::dispatch($module);
     }
+
+    /**
+     * 动态渲染 vue 页面
+     *
+     * @param string $basePath 插件 view 目录
+     * @param string $filename 插件 vue 文件名称，.vue 结尾
+     * @return array
+     * @throws \Exception
+     */
+    public static function renderView(string $basePath, string $filename): array
+    {
+        $filePath = $basePath . DIRECTORY_SEPARATOR. $filename;
+
+        if (! file_exists($filePath)) {
+            throw new \Exception('页面未找到');
+        }
+
+        return [
+            'entry' => '/' . $filename,
+            'files' => CollectVueDepsFile::collectFilesWithDeps($filePath, $basePath)
+        ];
+    }
+
+    /**
+     * 获取所有插件路由文件
+     *
+     * 优先从 plugins.json 加载，否则扫描插件目录
+     *
+     * @return array 路由文件路径数组
+     */
+    public static function allRoutes(): array
+    {
+        $routes = [];
+        $plugins = self::all();
+
+        foreach ($plugins as $plugin) {
+            $routesPath = ($plugin['path'] ?? '') . '/routes';
+
+            if (!File::isDirectory($routesPath)) {
+                continue;
+            }
+
+            foreach (File::files($routesPath) as $file) {
+                if ($file->getExtension() === 'php') {
+                    $routes[] = $file->getPathname();
+                }
+            }
+        }
+
+        return $routes;
+    }
+
+    /**
+     * 获取所有已安装插件
+     *
+     * 优先从 plugins.json 加载，否则扫描插件目录
+     *
+     * @return array
+     */
+    public static function all(): array
+    {
+        $installedFile = config('plugin.installed_file');
+
+        // 优先从 plugins.json 加载
+        if (File::exists($installedFile)) {
+            $content = File::get($installedFile);
+            $plugins = json_decode($content, true);
+            if (is_array($plugins) && !empty($plugins)) {
+                return $plugins;
+            }
+        }
+
+        // 扫描插件安装目录
+        $installPath = config('plugin.install_path');
+
+        if (!File::isDirectory($installPath)) {
+            return [];
+        }
+
+        $plugins = [];
+
+        // 使用 glob 查找一级和二级目录下的 composer.json
+        $composerFiles = array_merge(
+            File::glob($installPath . '/*/composer.json'),
+            File::glob($installPath . '/*/*/composer.json')
+        );
+
+        foreach ($composerFiles as $composerFile) {
+            $composerData = json_decode(File::get($composerFile), true);
+            if ($composerData && !empty($composerData['name'])) {
+                $plugins[$composerData['name']] = [
+                    'path' => dirname($composerFile),
+                ];
+            }
+        }
+
+        return $plugins;
+    }
+
+    /**
+     * @param array $data
+     * @param string $pid
+     * @param string $primaryKey
+     * @return void
+     */
+    public static function createMenus(array $data, string $pid = 'parent_id', string $primaryKey = 'id'): void
+    {
+        $class = '\Modules\Common\Support\ImportPermissions';
+
+        if (class_exists($class)) {
+            $importPermission = new $class;
+
+            $importPermission->import($data, $pid, $primaryKey);
+        }
+    }
+
+    /**
+     * 创建菜单
+     *
+     * @param string $name 菜单名称
+     * @param string $frontRoute 前端路由
+     * @param string $icon 菜单 Icon
+     * @param string $module 模块，根命名
+     * @param string $controller 控制
+     * @param string $controllerMethod 控制器方法
+     * @param string $component 组件
+     * @param int $type 类型
+     * @param array $children 子菜单
+     * @param string $activeMenu 激活菜单
+     * @param array $extra 额外数据
+     * @return array
+     */
+    public static function createMenu(string $name, string $frontRoute,
+                                      string $module, string $icon = '',
+                                      string $controller = '', string $controllerMethod = '',
+                                      int $type = 1, string $component = '', string $activeMenu = '',
+                                      array $children = [],
+                                      array $extra = []
+    ): array
+    {
+        return array_merge([
+            'permission_name' => $name,
+            'route' => $frontRoute,
+            'icon' => $icon,
+            'module' => $module,
+            'permission_mark' => $controller ? $controller . '@' . $controllerMethod : '',
+            'component' => $component,
+            'type' => $type,
+            'active_menu' => $activeMenu,
+            'children' => $children,
+        ], $extra);
+    }
+
+    /**
+     * 插件试图
+     *
+     * @param string $plugin
+     * @param string $entry
+     * @return string
+     */
+    public static function view(string $plugin, string $entry): string
+    {
+        return url("api/plugins/$plugin/$entry");
+    }
 }

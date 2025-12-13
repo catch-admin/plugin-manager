@@ -31,7 +31,10 @@ class PluginInitCommand extends Command
 
     public function handle(): int
     {
-        $type = $this->selectType();
+        // 默认使用 plugin 类型，其他类型暂时隐藏
+        // $type = $this->selectType();
+        $type = 'plugin';
+        
         $data = $this->collectCommonInfo($type);
         $data['type'] = $type;
 
@@ -100,6 +103,9 @@ class PluginInitCommand extends Command
         return $data;
     }
 
+    /**
+     * 选择插件类型（暂时隐藏）
+     */
     protected function selectType(): string
     {
         return select(

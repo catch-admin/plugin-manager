@@ -6,8 +6,11 @@ use Catch\Base\CatchController as Controller;
 use Catch\Exceptions\FailedException;
 use Catch\Plugin\Services\PluginApiService;
 use Catch\Plugin\Services\PluginInstallService;
+use Catch\Plugin\Support\CollectVueDepsFile;
 use Catch\Plugin\Support\InstalledPluginManager;
+use Catch\Plugin\Support\Plugin;
 use Catch\Support\SseResponse;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -236,5 +239,20 @@ class PluginController extends Controller
 
             $sse->complete($result);
         });
+    }
+
+    /**
+     * 加载插件 vue 层
+     *
+     * @param $path
+     * @return array
+     */
+    public function loader($path)
+    {
+        try {
+            return Plugin::renderView(dirname(__DIR__, 3) . '/resource/view/', $path);
+        } catch (\Throwable $e) {
+            throw new FailedException($e->getMessage());
+        }
     }
 }

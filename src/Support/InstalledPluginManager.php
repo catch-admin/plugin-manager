@@ -3,12 +3,12 @@
 namespace Catch\Plugin\Support;
 
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
-use Illuminate\Support\Facades\File;
 
 /**
  * 已安装插件管理器
  *
  * 使用 JSON 文件记录已安装的插件信息
+ * 注意：此类需要在 Composer 环境中工作，因此使用原生 PHP 文件操作
  */
 class InstalledPluginManager
 {
@@ -22,9 +22,16 @@ class InstalledPluginManager
      */
     protected ?array $cache = null;
 
-    public function __construct()
+    public function __construct(?string $storagePath = null)
     {
-        $this->storagePath = config('plugin.installed_file');
+        if ($storagePath) {
+            $this->storagePath = $storagePath;
+        } elseif (function_exists('config')) {
+            $this->storagePath = config('plugin.installed_file');
+        } else {
+            // Composer 环境下使用默认路径
+            $this->storagePath = getcwd() . '/storage/packages/plugins.json';
+        }
     }
 
     /**
@@ -119,12 +126,12 @@ class InstalledPluginManager
             return $this->cache;
         }
 
-        if (!File::exists($this->storagePath)) {
+        if (!file_exists($this->storagePath)) {
             $this->cache = [];
             return $this->cache;
         }
 
-        $content = File::get($this->storagePath);
+        $content = file_get_contents($this->storagePath);
         $data = json_decode($content, true);
 
         $this->cache = is_array($data) ? $data : [];
@@ -196,13 +203,13 @@ class InstalledPluginManager
 
         // 确保目录存在
         $directory = dirname($this->storagePath);
-        if (!File::isDirectory($directory)) {
-            File::makeDirectory($directory, 0755, true);
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
         }
 
         $content = json_encode($plugins, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
-        return File::put($this->storagePath, $content) !== false;
+        return file_put_contents($this->storagePath, $content) !== false;
     }
 
     /**

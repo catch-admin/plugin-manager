@@ -71,11 +71,11 @@ class PluginInstallService
             // 根据插件类型选择安装方式
             $pluginType = PluginType::tryFrom($type) ?? PluginType::Library;
 
-            if ($pluginType->isLibrary()) {
+            if ($pluginType->supportsComposer()) {
                 return $this->installByComposer($packageName, $version, $pluginId, $onProgress, $onLog, $token);
             }
 
-            // 非 Library 类型通过下载解压安装
+            // 不支持 Composer 的类型通过下载解压安装
             return $this->installByDownload($packageName, $version, $pluginId, $onProgress, $onLog, $token, $type);
         } catch (\Throwable $e) {
             throw new InstallFailedException($e->getMessage());
@@ -354,7 +354,7 @@ class PluginInstallService
      */
     protected function extractZip(string $zipFile, string $extractTo): bool
     {
-        $zip = new \ZipArchive();
+        $zip = new ZipArchive();
 
         if ($zip->open($zipFile) !== true) {
             return false;
@@ -423,13 +423,14 @@ class PluginInstallService
             $onProgress('check', 100, '插件信息确认');
 
             // 根据插件类型选择卸载方式
-            $pluginType = $pluginInfo['type'] ?? PluginType::Library->value;
+            $pluginTypeValue = $pluginInfo['type'] ?? PluginType::Library->value;
+            $pluginType = PluginType::tryFrom($pluginTypeValue) ?? PluginType::Library;
 
-            if ($pluginType === PluginType::Library->value) {
+            if ($pluginType->supportsComposer()) {
                 return $this->uninstallByComposer($name, $onProgress, $onLog);
             }
 
-            // 非 Library 类型通过删除目录卸载
+            // 不支持 Composer 的类型通过删除目录卸载
             return $this->uninstallByDelete($name, $pluginInfo, $onProgress);
         } catch (\Throwable $e) {
             throw new UnInstallFailedException($e->getMessage());

@@ -177,7 +177,6 @@ class PluginPackCommand extends Command
 
         $plugins = [];
 
-        // 遍历 plugins/vendor/package 结构
         foreach (File::directories($pluginsDir) as $vendorDir) {
             if (basename($vendorDir) === '.dist') {
                 continue;

@@ -2,6 +2,7 @@
 
 namespace Catch\Plugin\Commands;
 
+use Catch\Plugin\Support\Plugin;
 use Illuminate\Console\Command;
 use Illuminate\Support\Composer;
 
@@ -14,7 +15,7 @@ class InstallCommand extends Command
     /**
      * @var string
      */
-    protected $signature = 'catch:plugin-install';
+    protected $signature = 'catch:plugin-install --view';
 
     /**
      * @return void
@@ -22,15 +23,24 @@ class InstallCommand extends Command
      */
     public function handle(): void
     {
+        if ($this->hasOption('view')) {
+            $this->publishView();
+        }
+
+        $this->addLocalPathRepository();
+
+        $this->addMens();
+
+        $this->info('🎉 插件系统已安装，现在可以访问后台 /plugins 插件页面安装插件啦');
+    }
+
+    protected function publishView()
+    {
         $this->callSilently('vendor:publish', [
             '--provider' => 'Catch\Plugin\PluginServiceProvider',
             '--tag' => 'plugin-view',
             '--force' => true,
         ]);
-
-        $this->addLocalPathRepository();
-
-        $this->info('🎉 插件系统已安装，现在可以访问后台 /plugins 插件页面安装插件啦');
     }
 
     /**
@@ -61,5 +71,18 @@ class InstallCommand extends Command
 
             return $composer;
         });
+    }
+
+
+    protected function addMens(): void
+    {
+        Plugin::createMenus([
+            Plugin::createMenu('插件管理', '/plugin', 'Catch\Plugin', children: [
+                Plugin::createMenu('插件列表', '/index', 'Catch\Plugin',
+                    controller: 'Plugin', controllerMethod: 'index',type: 2,
+                    component: Plugin::view('plugin', 'index.vue')
+                )
+            ])
+        ]);
     }
 }
