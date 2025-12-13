@@ -5,7 +5,9 @@ use Catch\Plugin\Http\Controllers\PluginController;
 use Catch\Middleware\AuthMiddleware;
 
 // 插件 API 路由
-Route::prefix('api/plugins')->middleware(AuthMiddleware::class)->group(function () {
+Route::prefix(config('catch.route.prefix') . '/plugins')->middleware(AuthMiddleware::class)->group(function () {
+    Route::get('/plugin/{path}', [PluginController::class, 'loader'])->where('path', '.*');
+
     // 无需认证的路由（使用插件市场自己的 token）
     Route::withoutMiddleware(AuthMiddleware::class)->group(function () {
         // 登录接口
@@ -18,7 +20,7 @@ Route::prefix('api/plugins')->middleware(AuthMiddleware::class)->group(function 
         // 安装/卸载（流式 SSE）
         Route::get('install-stream', [PluginController::class, 'installStream']);
         Route::get('uninstall-stream', [PluginController::class, 'uninstallStream']);
-        
+
         // 已安装插件相关
         Route::get('installed', [PluginController::class, 'installed']);
         Route::get('check-installed', [PluginController::class, 'checkInstalled']);
@@ -30,3 +32,5 @@ Route::prefix('api/plugins')->middleware(AuthMiddleware::class)->group(function 
         Route::get('user', [PluginController::class, 'user']);
     });
 });
+
+
