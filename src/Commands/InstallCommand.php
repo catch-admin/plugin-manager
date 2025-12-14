@@ -27,7 +27,7 @@ class InstallCommand extends Command
             $this->publishView();
         }
 
-        $this->addLocalPathRepository();
+        // $this->addLocalPathRepository();
 
         $this->addMens();
 
@@ -80,7 +80,7 @@ class InstallCommand extends Command
             Plugin::createMenu('插件管理', '/plugin', 'Catch\Plugin', children: [
                 Plugin::createMenu('插件列表', '/index', 'Catch\Plugin',
                     controller: 'Plugin', controllerMethod: 'index',type: 2,
-                    component: Plugin::view('plugin', 'index.vue')
+                    component: Plugin::view('plugins/plugin', 'index.vue')
                 )
             ])
         ]);

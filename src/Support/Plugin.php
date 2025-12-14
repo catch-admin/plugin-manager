@@ -356,10 +356,11 @@ class Plugin
      *
      * @param string $plugin
      * @param string $entry
+     * @param string $prefix
      * @return string
      */
-    public static function view(string $plugin, string $entry): string
+    public static function view(string $plugin, string $entry, string $prefix = 'api'): string
     {
-        return url("api/plugins/$plugin/$entry");
+        return "$prefix/$plugin/$entry";
     }
 }

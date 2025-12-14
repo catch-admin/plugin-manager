@@ -247,7 +247,7 @@ class PluginController extends Controller
      * @param $path
      * @return array
      */
-    public function loader($path)
+    public function entry($path)
     {
         try {
             return Plugin::renderView(dirname(__DIR__, 3) . '/resource/view/', $path);
