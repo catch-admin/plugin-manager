@@ -6,7 +6,7 @@ use Catch\Middleware\AuthMiddleware;
 
 // 插件 API 路由
 Route::prefix(config('catch.route.prefix') . '/plugins')->middleware(AuthMiddleware::class)->group(function () {
-    Route::get('/plugin/{path}', [PluginController::class, 'loader'])->where('path', '.*');
+    Route::get('/plugin/{path}', [PluginController::class, 'entry'])->where('path', '.*');
 
     // 无需认证的路由（使用插件市场自己的 token）
     Route::withoutMiddleware(AuthMiddleware::class)->group(function () {
