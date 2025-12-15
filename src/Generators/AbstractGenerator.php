@@ -84,7 +84,39 @@ abstract class AbstractGenerator
      */
     protected function afterGenerate(): void
     {
-        // 子类可覆盖
+        $this->ensurePathRepository();
+    }
+
+    /**
+     * 确保主项目 composer.json 中存在 path repository 配置
+     */
+    protected function ensurePathRepository(): void
+    {
+        $composerPath = base_path('composer.json');
+        $composer = json_decode(File::get($composerPath), true);
+
+        $developPath = config('plugin.develop');
+        $relativePath = './' . str_replace(base_path() . DIRECTORY_SEPARATOR, '', $developPath);
+        $relativePath = str_replace('\\', '/', $relativePath) . '/*';
+
+        $repositories = $composer['repositories'] ?? [];
+        foreach ($repositories as $repo) {
+            if (($repo['type'] ?? '') === 'path' && ($repo['url'] ?? '') === $relativePath) {
+                return;
+            }
+        }
+
+        $composer['repositories'][] = [
+            'type' => 'path',
+            'url' => $relativePath,
+        ];
+
+        File::put($composerPath, json_encode(
+            $composer,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        ));
+
+        $this->command->info('  ✓ Added path repository to composer.json');
     }
 
     /**
@@ -112,6 +144,14 @@ abstract class AbstractGenerator
                     'name' => $this->data['author'] ?: null,
                     'email' => $this->data['email'] ?: null,
                 ])
+            ];
+        }
+
+        if (!empty($this->data['autoload_path'])) {
+            $composer['autoload'] = [
+                'psr-4' => [
+                    $this->getNamespace() . '\\' => $this->data['autoload_path']
+                ]
             ];
         }
 
@@ -216,12 +256,14 @@ PHP;
         $this->command->line('  ✅ 插件初始化完成！');
         $this->command->info('');
 
+        $relativePath = str_replace(base_path() . DIRECTORY_SEPARATOR, '', $this->path);
+
         $rows = array_merge([
             ['标题', $this->data['title']],
             ['包名', $this->data['name']],
             ['类型', $this->data['type']],
             ['版本', $this->data['version']],
-            ['路径', $this->path],
+            ['路径', $relativePath],
         ], $this->getResultRows());
 
         $this->command->table(['属性', '值'], $rows);

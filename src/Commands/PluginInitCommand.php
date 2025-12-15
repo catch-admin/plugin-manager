@@ -10,6 +10,8 @@ use Catch\Plugin\Generators\ProjectGenerator;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
+use Illuminate\Support\Str;
+
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 
@@ -34,7 +36,7 @@ class PluginInitCommand extends Command
         // 默认使用 plugin 类型，其他类型暂时隐藏
         // $type = $this->selectType();
         $type = 'plugin';
-        
+
         $data = $this->collectCommonInfo($type);
         $data['type'] = $type;
 
@@ -90,17 +92,66 @@ class PluginInitCommand extends Command
             validate: fn($v) => preg_match('/^\d+\.\d+\.\d+$/', $v) ? null : '格式: x.x.x'
         );
 
-        $data['email'] = text(
-            label: '作者邮箱',
-            required: true
-        );
-
-        $data['author'] = text(
-            label: '作者名称',
-            required: true
-        );
+        $this->collectAuthorInfo($data);
+        $this->collectAutoloadInfo($data);
 
         return $data;
+    }
+
+    protected function collectAuthorInfo(array &$data): void
+    {
+        [$gitName, $gitEmail] = $this->getGitAuthor();
+        $defaultAuthor = ($gitName && $gitEmail) ? "{$gitName} <{$gitEmail}>" : '';
+
+        $authorInput = text(
+            label: '作者',
+            placeholder: 'n to skip',
+            default: $defaultAuthor,
+            hint: '格式: Name <email@example.com>'
+        );
+
+        if ($authorInput === 'n' || empty($authorInput)) {
+            $data['author'] = '';
+            $data['email'] = '';
+            return;
+        }
+
+        if (preg_match('/^(.+?)\s*<(.+)>$/', $authorInput, $matches)) {
+            $data['author'] = trim($matches[1]);
+            $data['email'] = trim($matches[2]);
+        } else {
+            $data['author'] = $authorInput;
+            $data['email'] = '';
+        }
+    }
+
+    protected function collectAutoloadInfo(array &$data): void
+    {
+        $namespace = $this->getNamespaceFromPackageName($data['name']);
+
+        $autoloadPath = text(
+            label: "PSR-4 自定义加载命名空间 [{$namespace}\\]",
+            placeholder: '自定义加载命名空间',
+            default: 'src/',
+            hint: "适配 namespace \"{$namespace}\\\" 对应相对目录"
+        );
+
+        $data['autoload_path'] = ($autoloadPath === 'n') ? null : $autoloadPath;
+    }
+
+    protected function getGitAuthor(): array
+    {
+        $name = trim((string) shell_exec('git config --global user.name'));
+        $email = trim((string) shell_exec('git config --global user.email'));
+
+        return [$name, $email];
+    }
+
+    protected function getNamespaceFromPackageName(string $name): string
+    {
+        return collect(explode('/', $name))
+            ->map(fn($part) => Str::studly($part))
+            ->implode('\\');
     }
 
     /**
