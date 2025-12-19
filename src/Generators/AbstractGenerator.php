@@ -185,19 +185,15 @@ abstract class AbstractGenerator
     }
 
     /**
-     * 生成 Hook 文件
+     * 生成 Hook 文件（根目录 hook.php）
      */
     protected function generateHookFile(): void
     {
-        $namespace = $this->getNamespace();
         $stubPath = dirname(__DIR__, 2) . '/stubs/hook.php.stub';
         $content = File::get($stubPath);
 
-        $content = str_replace('{{namespace}}', $namespace, $content);
-        $content = str_replace('{{name}}', $this->data['name'], $content);
-
-        File::put($this->path . '/src/Hook.php', $content);
-        $this->command->info('  ✓ src/Hook.php');
+        File::put($this->path . '/hook.php', $content);
+        $this->command->info('  ✓ hook.php');
     }
 
     /**

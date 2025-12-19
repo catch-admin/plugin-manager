@@ -18,9 +18,7 @@ class BasicGenerator extends AbstractGenerator
 
     protected function getComposerExtra(): array
     {
-        return [
-            'hook' => $this->getNamespace() . '\\Hook',
-        ];
+        return [];
     }
 
     protected function getResultRows(): array

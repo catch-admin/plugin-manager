@@ -1,113 +1,55 @@
 <?php
 
-declare(strict_types=1);
-
-namespace {{namespace}};
-
-use Catch\Plugin\Support\Plugin;
-
 /**
  * 插件生命周期 Hook
  *
- * $context 包含以下信息：
- * - plugin_path: 插件目录路径
- * - module: 模块名（module 类型专用）
+ * $context 包含：
+ * - name: 包名
  * - version: 版本号
- * - composer_data: composer.json 数据
- *
- * 方法说明：
- * - beforeInstall: 安装前（可阻止安装）
- * - afterInstall: 安装后（可使用 Laravel）
- * - beforeUpdate: 更新前（可使用 Laravel）
- * - afterUpdate: 更新后（可使用 Laravel）
- * - beforeUninstall: 卸载前（可使用 Laravel）
- * - afterUninstall: 卸载后
+ * - path: 安装路径
+ * - namespace: 根命名空间
  */
 class Hook
 {
     /**
-     * 安装前执行（可阻止安装）
+     * 安装前
      */
-    public static function beforeInstall(array $context): void
+    public function beforeInstall(array $context): void
     {
-        // 验证条件，抛出异常可阻止安装
-        // throw new \RuntimeException('不满足安装条件');
     }
 
     /**
-     * 安装后执行（可使用 Laravel）
-     *
-     * 对于 module 类型，这里是发布模块的地方
+     * 安装后
      */
-    public static function afterInstall(array $context): void
+    public function afterInstall(array $context): void
     {
-        $pluginPath = $context['plugin_path'];
-
-        // ========== Module 类型示例 ==========
-        // $moduleName = $context['module'] ?? '';
-        // if ($moduleName) {
-        //     // 发布模块到 modules 目录
-        //     Plugin::publishModule(
-        //         $pluginPath . '/resource/' . $moduleName,
-        //         $moduleName
-        //     );
-        //
-        //     // 发布视图到 web/src/views 目录
-        //     Plugin::publishView(
-        //         $pluginPath . '/resource/view/' . $moduleName,
-        //         $moduleName
-        //     );
-        //
-        //     // 执行数据库迁移
-        //     Plugin::migrate($pluginPath . '/resource/' . $moduleName . '/database/migrations');
-        // }
-
-        // ========== Library/Plugin 类型示例 ==========
-        // 运行数据库迁移
-        // \Illuminate\Support\Facades\Artisan::call('migrate', [
-        //     '--path' => 'vendor/{{name}}/database/migrations',
-        //     '--force' => true,
-        // ]);
     }
 
     /**
-     * 更新前执行（可使用 Laravel）
+     * 更新前
      */
-    public static function beforeUpdate(array $context): void
+    public function beforeUpdate(array $context): void
     {
-        // 备份数据等
     }
 
     /**
-     * 更新后执行（可使用 Laravel）
+     * 更新后
      */
-    public static function afterUpdate(array $context): void
+    public function afterUpdate(array $context): void
     {
-        // 运行新版本的迁移
     }
 
     /**
-     * 卸载前执行（可使用 Laravel）
+     * 卸载前
      */
-    public static function beforeUninstall(array $context): void
+    public function beforeUninstall(array $context): void
     {
-        // 备份数据
     }
 
     /**
-     * 卸载后执行
-     *
-     * 对于 module 类型，这里是删除模块的地方
+     * 卸载后
      */
-    public static function afterUninstall(array $context): void
+    public function afterUninstall(array $context): void
     {
-        // ========== Module 类型示例 ==========
-        // $moduleName = $context['module'] ?? '';
-        // if ($moduleName) {
-        //     // 删除模块
-        //     Plugin::deleteModule($moduleName);
-        //     // 删除视图
-        //     Plugin::deleteView($moduleName);
-        // }
     }
 }

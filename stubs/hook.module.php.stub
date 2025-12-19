@@ -19,28 +19,23 @@ class Hook
         $pluginPath = $context['plugin_path'];
         $moduleName = $context['module'];
 
-        // 发布模块
         Plugin::publishModule($pluginPath . '/resource/' . $moduleName, $moduleName);
 
-        // 验证发布是否成功
         $modulePath = base_path('modules/' . Str::studly($moduleName));
         if (!File::isDirectory($modulePath)) {
             throw new \RuntimeException('模块发布失败');
         }
 
-        // 发布视图
         $viewPath = $pluginPath . '/resource/view/' . $moduleName;
         if (is_dir($viewPath)) {
             Plugin::publishView($viewPath, $moduleName);
         }
 
-        // 注册模块
         Plugin::registerModule($moduleName, [
             'title' => $composerData['title'] ?? '',
             'description' => $composerData['description'] ?? '',
         ]);
 
-        // 执行数据库迁移和填充
         Plugin::migrateModule($moduleName);
         Plugin::seedModule($moduleName);
     }
@@ -62,14 +57,10 @@ class Hook
     {
         $moduleName = $context['module'];
 
-        // 注销模块
         Plugin::unregisterModule($moduleName);
-
-        // 删除模块和视图
         Plugin::deleteModule($moduleName);
         Plugin::deleteView($moduleName);
 
-        // 验证清理是否成功
         $modulePath = base_path('modules/' . Str::studly($moduleName));
         if (File::isDirectory($modulePath)) {
             throw new \RuntimeException('模块清理失败');

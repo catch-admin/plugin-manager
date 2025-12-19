@@ -15,7 +15,7 @@ class InstalledPluginManager
     /**
      * 存储文件路径
      */
-    protected string $storagePath;
+    protected ?string $storagePath = null;
 
     /**
      * 缓存的插件数据
@@ -126,7 +126,7 @@ class InstalledPluginManager
             return $this->cache;
         }
 
-        if (!file_exists($this->storagePath)) {
+        if (!$this->storagePath || !file_exists($this->storagePath)) {
             $this->cache = [];
             return $this->cache;
         }
@@ -199,6 +199,10 @@ class InstalledPluginManager
      */
     protected function save(array $plugins): bool
     {
+        if (!$this->storagePath) {
+            return false;
+        }
+
         $this->cache = $plugins;
 
         // 确保目录存在

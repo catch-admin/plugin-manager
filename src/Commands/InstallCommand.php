@@ -80,7 +80,7 @@ class InstallCommand extends Command
             Plugin::createMenu('插件管理', '/plugin', 'Catch\Plugin', children: [
                 Plugin::createMenu('插件列表', '/index', 'Catch\Plugin',
                     controller: 'Plugin', controllerMethod: 'index',type: 2,
-                    component: Plugin::view('plugins/plugin', 'index.vue')
+                    component: Plugin::view('plugin', 'index.vue')
                 )
             ])
         ]);

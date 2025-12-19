@@ -79,7 +79,7 @@ class ModuleGenerator extends AbstractGenerator
     {
         return [
             'module' => $this->moduleName,
-            'hook' => $this->getNamespace() . '\\Hook',
+            'hook' => $this->getNamespace() . '\\hook',
         ];
     }
 

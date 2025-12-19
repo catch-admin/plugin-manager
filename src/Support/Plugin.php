@@ -4,6 +4,7 @@ namespace Catch\Plugin\Support;
 use Catch\CatchAdmin;
 use Catch\Contracts\ModuleRepositoryInterface;
 use Catch\Support\DB\SeedRun;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -11,6 +12,7 @@ use Modules\Permissions\Events\DeleteModuleMenusEvent;
 use Modules\Permissions\Events\DisableModuleMenusEvent;
 use Modules\Permissions\Events\EnableModuleMenusEvent;
 use Throwable;
+use RuntimeException;
 
 /**
  * 插件助手
@@ -200,19 +202,24 @@ class Plugin
     }
 
     /**
-     * 动态渲染 vue 页面
+     * 动态渲染 vue 页面（供插件使用）
      *
-     * @param string $basePath 插件 view 目录
-     * @param string $filename 插件 vue 文件名称，.vue 结尾
+     * @param string $plugin 插件名称
+     * @param string $filename vue 文件名称，.vue 结尾
      * @return array
      * @throws \Exception
      */
-    public static function renderView(string $basePath, string $filename): array
+    public static function render(string $plugin, string $filename): array
     {
-        $filePath = $basePath . DIRECTORY_SEPARATOR. $filename;
+        if (! str_ends_with($filename, '.vue')) {
+            $filename .= '.vue';
+        }
+
+        $basePath = self::getPluginPath($plugin) . DIRECTORY_SEPARATOR . 'resource' . DIRECTORY_SEPARATOR . 'view';
+        $filePath = $basePath . DIRECTORY_SEPARATOR . $filename;
 
         if (! file_exists($filePath)) {
-            throw new \Exception('页面未找到');
+            throw new RuntimeException('页面未找到');
         }
 
         return [
@@ -227,6 +234,7 @@ class Plugin
      * 优先从 plugins.json 加载，否则扫描插件目录
      *
      * @return array 路由文件路径数组
+     * @throws FileNotFoundException
      */
     public static function allRoutes(): array
     {
@@ -234,7 +242,7 @@ class Plugin
         $plugins = self::all();
 
         foreach ($plugins as $plugin) {
-            $routesPath = ($plugin['path'] ?? '') . '/routes';
+            $routesPath = base_path(($plugin['path'] ?? '') . '/routes');
 
             if (!File::isDirectory($routesPath)) {
                 continue;
@@ -256,6 +264,7 @@ class Plugin
      * 优先从 plugins.json 加载，否则扫描插件目录
      *
      * @return array
+     * @throws FileNotFoundException
      */
     public static function all(): array
     {
@@ -273,7 +282,7 @@ class Plugin
         // 扫描插件安装目录
         $installPath = config('plugin.install_path');
 
-        if (!File::isDirectory($installPath)) {
+        if (! File::isDirectory($installPath)) {
             return [];
         }
 
@@ -287,7 +296,7 @@ class Plugin
 
         foreach ($composerFiles as $composerFile) {
             $composerData = json_decode(File::get($composerFile), true);
-            if ($composerData && !empty($composerData['name'])) {
+            if ($composerData && ! empty($composerData['name'])) {
                 $plugins[$composerData['name']] = [
                     'path' => dirname($composerFile),
                 ];
@@ -298,6 +307,26 @@ class Plugin
     }
 
     /**
+     * 获取插件路径
+     *
+     * @param string $pluginName
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public static function getPluginPath(string $pluginName): string
+    {
+        $plugins = self::all();
+
+        $path = $plugins[$pluginName]['path'] ?? '';
+
+        if (! $path) {
+            throw new RuntimeException('插件不存在');
+        }
+
+        return base_path($path);
+    }
+
+    /**
      * @param array $data
      * @param string $pid
      * @param string $primaryKey
@@ -305,7 +334,7 @@ class Plugin
      */
     public static function createMenus(array $data, string $pid = 'parent_id', string $primaryKey = 'id'): void
     {
-        $class = '\Modules\Common\Support\ImportPermissions';
+        $class = \Modules\Common\Support\ImportPermissions::class;
 
         if (class_exists($class)) {
             $importPermission = new $class;
@@ -352,15 +381,19 @@ class Plugin
     }
 
     /**
-     * 插件试图
+     * 插件视图 URL
      *
-     * @param string $plugin
-     * @param string $entry
-     * @param string $prefix
+     * @param string $plugin 插件名称
+     * @param string $entry 入口文件
+     * @param string $prefix URL 前缀
      * @return string
      */
-    public static function view(string $plugin, string $entry, string $prefix = 'api'): string
+    public static function view(string $plugin, string $entry, string $prefix = 'api/plugins'): string
     {
-        return "$prefix/$plugin/$entry";
+        if (str_contains($entry, '.')) {
+            $entry = str_replace('.', '/', $entry);
+        }
+
+        return "{$prefix}/{$plugin}/{$entry}";
     }
 }

@@ -242,15 +242,53 @@ class PluginController extends Controller
     }
 
     /**
-     * 加载插件 vue 层
+     * 加载 Plugin 扩展包自身的 vue 视图
      *
      * @param $path
      * @return array
      */
     public function entry($path)
     {
+        if (! str_ends_with($path, '.vue')) {
+            $path .= '.vue';
+        }
+
+        $basePath = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'resource' . DIRECTORY_SEPARATOR . 'view';
+        $filePath = $basePath . DIRECTORY_SEPARATOR . $path;
+
+        if (! file_exists($filePath)) {
+            throw new FailedException('页面未找到');
+        }
+
+        return [
+            'entry' => '/' . $path,
+            'files' => CollectVueDepsFile::collectFilesWithDeps($filePath, $basePath)
+        ];
+    }
+
+    /**
+     * 通用插件视图路由
+     *
+     * 路径格式: /{plugin_name}/{path}
+     * 例如: /test/test/user/index → 插件 test/test 的 resource/view/user/index.vue
+     *
+     * @param string $pluginName vendor/package 格式的插件名
+     * @param string $path 文件路径
+     * @return array
+     */
+    public function pluginView(string $pluginName, string $path): array
+    {
         try {
-            return Plugin::renderView(dirname(__DIR__, 3) . '/resource/view/', $path);
+            // 组合插件名（plugin_name 是 vendor，path 的第一段是 package）
+            $segments = explode('/', $path);
+            $plugin = $pluginName . '/' . array_shift($segments);
+            $filename = implode('/', $segments);
+
+            if (empty($filename)) {
+                throw new FailedException('缺少文件路径');
+            }
+
+            return Plugin::render($plugin, $filename);
         } catch (\Throwable $e) {
             throw new FailedException($e->getMessage());
         }

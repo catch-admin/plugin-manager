@@ -38,7 +38,7 @@ class LibraryGenerator extends AbstractGenerator
         $extra = [];
 
         if ($this->needHook) {
-            $extra['hook'] = $this->getNamespace() . '\\Hook';
+            $extra['hook'] = $this->getNamespace() . '\\hook';
         }
 
         if ($this->needServiceProvider) {

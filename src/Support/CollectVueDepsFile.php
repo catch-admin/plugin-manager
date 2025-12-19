@@ -32,7 +32,7 @@ class CollectVueDepsFile
 
         // 计算相对路径（统一使用正斜杠）
         $relativePath = str_replace('\\', '/', str_replace($baseDir, '', $entryPath));
-        if (!str_starts_with($relativePath, '/')) {
+        if (! str_starts_with($relativePath, '/')) {
             $relativePath = '/' . $relativePath;
         }
 
@@ -69,21 +69,38 @@ class CollectVueDepsFile
         );
 
         foreach ($matches[1] as $importPath) {
-            // 解析相对路径
-            $resolvedPath = realpath($currentDir . '/' . $importPath);
+            $resolvedPath = null;
+            $fullPath = $currentDir . '/' . $importPath;
 
-            // 如果没有扩展名，尝试常见扩展名
+            // 1. 尝试直接解析（必须是文件）
+            $tryPath = realpath($fullPath);
+            if ($tryPath && is_file($tryPath)) {
+                $resolvedPath = $tryPath;
+            }
+
+            // 2. 如果没有扩展名，尝试常见扩展名
             if (!$resolvedPath) {
                 foreach (['.vue', '.js', '.ts', '.mjs'] as $ext) {
-                    $tryPath = realpath($currentDir . '/' . $importPath . $ext);
-                    if ($tryPath) {
+                    $tryPath = realpath($fullPath . $ext);
+                    if ($tryPath && is_file($tryPath)) {
                         $resolvedPath = $tryPath;
                         break;
                     }
                 }
             }
 
-            if ($resolvedPath && file_exists($resolvedPath)) {
+            // 3. 如果仍未找到，尝试目录下的 index 文件
+            if (!$resolvedPath) {
+                foreach (['/index.vue', '/index.js', '/index.ts'] as $indexFile) {
+                    $tryPath = realpath($fullPath . $indexFile);
+                    if ($tryPath && is_file($tryPath)) {
+                        $resolvedPath = $tryPath;
+                        break;
+                    }
+                }
+            }
+
+            if ($resolvedPath) {
                 $imports[] = $resolvedPath;
             }
         }
