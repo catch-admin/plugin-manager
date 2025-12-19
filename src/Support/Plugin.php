@@ -319,11 +319,20 @@ class Plugin
 
         $path = $plugins[$pluginName]['path'] ?? '';
 
-        if (! $path) {
-            throw new RuntimeException('插件不存在');
+        // 如果 path 存在，直接返回
+        if ($path) {
+            return base_path($path);
         }
 
-        return base_path($path);
+        // 尝试从 install_path 配置中查找插件
+        $installPath = config('plugin.install_path');
+        $possiblePath = $installPath . DIRECTORY_SEPARATOR . $pluginName;
+
+        if (File::isDirectory($possiblePath)) {
+            return $possiblePath;
+        }
+
+        throw new RuntimeException('无法加载插件，插件不存在');
     }
 
     /**
