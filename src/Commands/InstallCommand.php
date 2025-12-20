@@ -77,12 +77,17 @@ class InstallCommand extends Command
     protected function addMens(): void
     {
         Plugin::createMenus([
-            Plugin::createMenu('插件管理', '/plugin', 'Catch\Plugin', children: [
-                Plugin::createMenu('插件列表', 'index', 'Catch\Plugin',
-                    controller: 'Plugin', controllerMethod: 'index',type: 2,
-                    component: Plugin::view('plugin', 'index')
-                )
-            ])
+            Plugin::createMenu('插件管理', '/plugin', 'Catch\Plugin',
+                icon: 'cube',
+                children: [
+                    Plugin::createMenu('插件列表', 'index', 'Catch\Plugin',
+                        controller: 'Plugin',
+                        controllerMethod: 'index',
+                        type: 2,
+                        component: Plugin::view('plugin', 'index')
+                    )
+                ]
+            )
         ]);
     }
 }
