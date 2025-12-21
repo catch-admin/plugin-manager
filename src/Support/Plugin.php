@@ -405,4 +405,15 @@ class Plugin
 
         return "{$prefix}/{$plugin}/{$entry}";
     }
+
+    /**
+     * 移除模块的菜单
+     *
+     * @param string $module
+     * @return bool|null
+     */
+    public static function removeMenusBy(string $module): ?bool
+    {
+        return \Modules\Permissions\Models\Permissions::where('module', $module)->delete();
+    }
 }
