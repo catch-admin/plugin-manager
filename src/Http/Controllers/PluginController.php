@@ -7,15 +7,11 @@ use Catch\Exceptions\FailedException;
 use Catch\Plugin\Services\PluginApiService;
 use Catch\Plugin\Services\PluginInstallService;
 use Catch\Plugin\Support\CollectVueDepsFile;
-use Catch\Plugin\Support\ComposerAuth;
 use Catch\Plugin\Support\InstalledPluginManager;
 use Catch\Plugin\Support\Plugin;
 use Catch\Support\SseResponse;
-use Exception;
-use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\File;
 
 class PluginController extends Controller
 {
@@ -27,7 +23,7 @@ class PluginController extends Controller
     /**
      * 登录获取 Token
      */
-    public function login(Request $request, ComposerAuth $composerAuth)
+    public function login(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
@@ -44,8 +40,6 @@ class PluginController extends Controller
         }
 
         $result['data']['token'] = base64_encode($result['data']['token']);
-
-        $composerAuth->token(config('plugin.plugin_host'), $result['data']['token']);
 
         return $result['data'];
     }
@@ -150,7 +144,6 @@ class PluginController extends Controller
 
     /**
      * 获取已安装插件列表
-     * @throws FileNotFoundException
      */
     public function installed()
     {
@@ -160,7 +153,6 @@ class PluginController extends Controller
 
     /**
      * 检查插件是否已安装
-     * @throws FileNotFoundException
      */
     public function checkInstalled(Request $request)
     {

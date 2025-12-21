@@ -9,6 +9,7 @@ use Catch\Plugin\Commands\PluginOptimizeCommand;
 use Catch\Plugin\Commands\PluginPackCommand;
 use Catch\Plugin\Support\Plugin;
 use Illuminate\Support\ServiceProvider;
+use Catch\Plugin\Commands\PluginAuthCommand;
 
 class PluginServiceProvider extends ServiceProvider
 {
@@ -49,6 +50,7 @@ class PluginServiceProvider extends ServiceProvider
             PluginPackCommand::class,
             PluginOptimizeCommand::class,
             PluginClearCommand::class,
+            PluginAuthCommand::class,
         ]);
     }
 

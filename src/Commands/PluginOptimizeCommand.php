@@ -9,19 +9,19 @@ use Illuminate\Support\Facades\File;
 
 /**
  * 插件优化命令
- * 
+ *
  * 扫描已安装的插件目录，更新插件记录
  */
 class PluginOptimizeCommand extends Command
 {
-    protected $signature = 'plugin:optimize';
+    protected $signature = 'catch:plugin-optimize';
 
     protected $description = '优化插件记录（扫描插件目录并更新记录）';
 
     public function handle(InstalledPluginManager $manager): int
     {
         $plugins = Plugin::all();
-        
+
         if (empty($plugins)) {
             $this->components->info('暂无插件');
             return self::SUCCESS;
@@ -32,7 +32,7 @@ class PluginOptimizeCommand extends Command
         foreach ($plugins as $name => $plugin) {
             $directory = $plugin['path'] ?? '';
             $composerFile = $directory . '/composer.json';
-            
+
             if (!File::exists($composerFile)) {
                 continue;
             }
@@ -55,7 +55,7 @@ class PluginOptimizeCommand extends Command
                     'path' => $directory,
                 ]);
             }
-            
+
             $count++;
         }
 

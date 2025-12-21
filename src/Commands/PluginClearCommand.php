@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\File;
 
 class PluginClearCommand extends Command
 {
-    protected $signature = 'plugin:clear';
+    protected $signature = 'catch:plugin-clear';
 
     protected $description = '清除插件记录文件';
 
