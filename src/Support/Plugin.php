@@ -97,7 +97,7 @@ class Plugin
     /**
      * 执行数据库迁移（路径方式）
      */
-    public static function migrate(string $path): int
+    public static function migrate(string $path): void
     {
         if (Str::of($path)->startsWith(base_path())) {
             $path = Str::of($path)->remove(base_path());
@@ -105,10 +105,7 @@ class Plugin
 
         $path = trim($path, DIRECTORY_SEPARATOR);
 
-        return Artisan::call('migrate', [
-            '--path' => $path,
-            '--force' => true
-        ]);
+        command("migrate --path={$path} --force");
     }
 
     /**
@@ -304,6 +301,16 @@ class Plugin
         }
 
         return $plugins;
+    }
+
+    /**
+     * @param string $pluginName
+     * @return string
+     * @throws FileNotFoundException
+     */
+    public static function migrationPath(string $pluginName)
+    {
+        return self::getPluginPath($pluginName) . DIRECTORY_SEPARATOR . 'migrations';
     }
 
     /**
