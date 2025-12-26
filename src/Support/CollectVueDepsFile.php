@@ -1,19 +1,19 @@
 <?php
+
 namespace Catch\Plugin\Support;
 
-
 /**
- * 解析 vue 文件所有依赖文件
+ * 解析 vue 文件所有依赖文件.
  */
 class CollectVueDepsFile
 {
     /**
-     * 收集相关依赖文件
+     * 收集相关依赖文件.
      *
-     * @param string $entryPath
-     * @param string $baseDir
-     * @param array $collected
-     * @param array $visited
+     * @param  string  $entryPath
+     * @param  string  $baseDir
+     * @param  array  $collected
+     * @param  array  $visited
      * @return array
      */
     public static function collectFilesWithDeps(string $entryPath, string $baseDir, array &$collected = [], array &$visited = []): array
@@ -22,7 +22,7 @@ class CollectVueDepsFile
         $entryPath = realpath($entryPath) ?: $entryPath;
         $baseDir = realpath($baseDir) ?: $baseDir;
 
-        if (!file_exists($entryPath) || isset($visited[$entryPath])) {
+        if (! file_exists($entryPath) || isset($visited[$entryPath])) {
             return $collected;
         }
 
@@ -50,10 +50,10 @@ class CollectVueDepsFile
     }
 
     /**
-     * 解析入口文件的相关 imports
+     * 解析入口文件的相关 imports.
      *
-     * @param string $content
-     * @param string $currentDir
+     * @param  string  $content
+     * @param  string  $currentDir
      * @return array
      */
     private static function parseLocalImports(string $content, string $currentDir): array
@@ -79,7 +79,7 @@ class CollectVueDepsFile
             }
 
             // 2. 如果没有扩展名，尝试常见扩展名
-            if (!$resolvedPath) {
+            if (! $resolvedPath) {
                 foreach (['.vue', '.js', '.ts', '.mjs'] as $ext) {
                     $tryPath = realpath($fullPath . $ext);
                     if ($tryPath && is_file($tryPath)) {
@@ -90,7 +90,7 @@ class CollectVueDepsFile
             }
 
             // 3. 如果仍未找到，尝试目录下的 index 文件
-            if (!$resolvedPath) {
+            if (! $resolvedPath) {
                 foreach (['/index.vue', '/index.js', '/index.ts'] as $indexFile) {
                     $tryPath = realpath($fullPath . $indexFile);
                     if ($tryPath && is_file($tryPath)) {

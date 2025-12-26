@@ -9,14 +9,13 @@ use Catch\Plugin\Generators\PluginGenerator;
 use Catch\Plugin\Generators\ProjectGenerator;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
-
 use Illuminate\Support\Str;
 
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 
 /**
- * 插件初始化
+ * 插件初始化.
  */
 class PluginInitCommand extends Command
 {
@@ -26,8 +25,8 @@ class PluginInitCommand extends Command
 
     protected array $generators = [
         'library' => LibraryGenerator::class,
-        'module'  => ModuleGenerator::class,
-        'plugin'  => PluginGenerator::class,
+        'module' => ModuleGenerator::class,
+        'plugin' => PluginGenerator::class,
         'project' => ProjectGenerator::class,
     ];
 
@@ -67,15 +66,16 @@ class PluginInitCommand extends Command
             placeholder: $namePlaceholder,
             required: true,
             validate: function ($v) use ($pluginPath, $isModule) {
-                if (!preg_match('/^[a-z0-9-]+\/[a-z0-9-]+$/', $v)) {
+                if (! preg_match('/^[a-z0-9-]+\/[a-z0-9-]+$/', $v)) {
                     return '格式: vendor/package';
                 }
-                if ($isModule && !str_starts_with($v, 'module/')) {
+                if ($isModule && ! str_starts_with($v, 'module/')) {
                     return 'module 类型包名必须以 module/ 开头';
                 }
                 if (File::exists($pluginPath . '/' . $v)) {
                     return '插件已存在';
                 }
+
                 return null;
             }
         );
@@ -89,7 +89,7 @@ class PluginInitCommand extends Command
         $data['version'] = text(
             label: '版本号',
             default: '1.0.0',
-            validate: fn($v) => preg_match('/^\d+\.\d+\.\d+$/', $v) ? null : '格式: x.x.x'
+            validate: fn ($v) => preg_match('/^\d+\.\d+\.\d+$/', $v) ? null : '格式: x.x.x'
         );
 
         $this->collectAuthorInfo($data);
@@ -113,6 +113,7 @@ class PluginInitCommand extends Command
         if ($authorInput === 'n' || empty($authorInput)) {
             $data['author'] = '';
             $data['email'] = '';
+
             return;
         }
 
@@ -129,14 +130,14 @@ class PluginInitCommand extends Command
     {
         $namespace = $this->getNamespaceFromPackageName($data['name']);
 
-        $autoloadPath = text(
+        $namespace = text(
             label: "PSR-4 自定义加载命名空间 [{$namespace}\\]",
             placeholder: '自定义加载命名空间',
             default: 'src/',
             hint: "适配 namespace \"{$namespace}\\\" 对应相对目录"
         );
 
-        $data['autoload_path'] = ($autoloadPath === 'n') ? null : $autoloadPath;
+        $data['name'] = $namespace;
     }
 
     protected function getGitAuthor(): array
@@ -150,12 +151,12 @@ class PluginInitCommand extends Command
     protected function getNamespaceFromPackageName(string $name): string
     {
         return collect(explode('/', $name))
-            ->map(fn($part) => Str::studly($part))
+            ->map(fn ($part) => Str::studly($part))
             ->implode('\\');
     }
 
     /**
-     * 选择插件类型（暂时隐藏）
+     * 选择插件类型（暂时隐藏）.
      */
     protected function selectType(): string
     {
@@ -163,8 +164,8 @@ class PluginInitCommand extends Command
             label: '插件类型',
             options: [
                 PluginType::Library->value => 'library - Composer 包（通过 composer require 安装）',
-                PluginType::Module->value  => 'module - 自发布模块（从 modules 目录打包）',
-                PluginType::Plugin->value  => 'plugin - 自发布插件（仅执行 Hook）',
+                PluginType::Module->value => 'module - 自发布模块（从 modules 目录打包）',
+                PluginType::Plugin->value => 'plugin - 自发布插件（仅执行 Hook）',
                 PluginType::Project->value => 'project - 自发布项目（仅执行 Hook）',
             ],
             default: PluginType::Library->value

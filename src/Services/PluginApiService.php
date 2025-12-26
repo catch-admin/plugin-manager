@@ -3,14 +3,11 @@
 namespace Catch\Plugin\Services;
 
 use Catch\Exceptions\FailedException;
-use Catch\Plugin\Support\ComposerAuth;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
-use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class PluginApiService
 {
@@ -19,7 +16,7 @@ class PluginApiService
 
     protected array $options = [
         'verify' => false,
-        'proxy' => false
+        'proxy' => false,
     ];
 
     public function __construct()
@@ -28,9 +25,10 @@ class PluginApiService
     }
 
     /**
-     * @param string $email
-     * @param string $password
+     * @param  string  $email
+     * @param  string  $password
      * @return array|null
+     *
      * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
      * @throws \Illuminate\Http\Client\ConnectionException
      */
@@ -53,7 +51,7 @@ class PluginApiService
     }
 
     /**
-     * 登出
+     * 登出.
      */
     public function logout(string $token): ?array
     {
@@ -69,12 +67,13 @@ class PluginApiService
 
         } catch (\Exception $e) {
             Log::error('插件 API 登出异常', ['error' => $e->getMessage()]);
+
             return null;
         }
     }
 
     /**
-     * 获取当前用户信息
+     * 获取当前用户信息.
      */
     public function getUser(string $token): ?array
     {
@@ -90,12 +89,13 @@ class PluginApiService
 
         } catch (\Exception $e) {
             Log::error('获取用户信息异常', ['error' => $e->getMessage()]);
+
             return null;
         }
     }
 
     /**
-     * 获取分类列表
+     * 获取分类列表.
      */
     public function getCategories(string $token): ?array
     {
@@ -111,12 +111,13 @@ class PluginApiService
 
         } catch (\Exception $e) {
             Log::error('获取分类列表异常', ['error' => $e->getMessage()]);
+
             return null;
         }
     }
 
     /**
-     * 获取插件列表
+     * 获取插件列表.
      */
     public function getPlugins(string $token, array $filters = []): ?array
     {
@@ -132,17 +133,18 @@ class PluginApiService
 
         } catch (\Exception $e) {
             Log::error('获取插件列表异常', ['error' => $e->getMessage()]);
+
             return null;
         }
     }
 
     /**
-     * 下载插件
+     * 下载插件.
      *
-     * @param string $token
-     * @param string $pluginId
-     * @param $destination
-     * @param string|null $version
+     * @param  string  $token
+     * @param  string  $pluginId
+     * @param  $destination
+     * @param  string|null  $version
      * @return mixed
      */
     public function downloadPlugin(string $token, string $pluginId, $destination, ?string $version = null): mixed
@@ -179,6 +181,7 @@ class PluginApiService
                     'plugin_id' => $pluginId,
                     'status' => $statusCode,
                 ]);
+
                 return false;
             }
 
@@ -193,7 +196,7 @@ class PluginApiService
 
             // 读取流并写入文件
             $downloadedSize = 0;
-            while (!$body->eof()) {
+            while (! $body->eof()) {
                 $chunk = $body->read(8192); // 每次读取 8KB
                 $written = fwrite($fileHandle, $chunk);
 
@@ -214,7 +217,7 @@ class PluginApiService
             }
 
             return $destination;
-        } catch(BadResponseException $e){
+        } catch (BadResponseException $e) {
             $content = json_decode($e->getResponse()->getBody()->getContents(), true);
 
             throw new FailedException($content['message']);
@@ -231,12 +234,13 @@ class PluginApiService
     }
 
     /**
-     * 校验插件版本权限
+     * 校验插件版本权限.
      *
-     * @param string $token
-     * @param string $pluginId
-     * @param $versionId
+     * @param  string  $token
+     * @param  string  $pluginId
+     * @param  $versionId
      * @return bool
+     *
      * @throws ConnectionException
      */
     public function checkPermission(string $token, string $pluginId, $version): bool

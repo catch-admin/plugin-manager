@@ -7,22 +7,22 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
 /**
- * 插件生成器抽象基类
+ * 插件生成器抽象基类.
  */
 abstract class AbstractGenerator
 {
     /**
-     * 插件数据
+     * 插件数据.
      */
     protected array $data;
 
     /**
-     * 插件路径
+     * 插件路径.
      */
     protected string $path;
 
     /**
-     * 命令实例（用于输出）
+     * 命令实例（用于输出）.
      */
     protected Command $command;
 
@@ -34,7 +34,7 @@ abstract class AbstractGenerator
     }
 
     /**
-     * 执行生成
+     * 执行生成.
      */
     public function generate(): void
     {
@@ -60,27 +60,27 @@ abstract class AbstractGenerator
     }
 
     /**
-     * 收集类型特有的额外信息
+     * 收集类型特有的额外信息.
      */
     abstract protected function collectExtraInfo(): void;
 
     /**
-     * 生成类型特有的文件
+     * 生成类型特有的文件.
      */
     abstract protected function generateExtraFiles(): void;
 
     /**
-     * 获取 composer.json 的 extra 配置
+     * 获取 composer.json 的 extra 配置.
      */
     abstract protected function getComposerExtra(): array;
 
     /**
-     * 获取结果表格行
+     * 获取结果表格行.
      */
     abstract protected function getResultRows(): array;
 
     /**
-     * 后置处理
+     * 后置处理.
      */
     protected function afterGenerate(): void
     {
@@ -88,7 +88,7 @@ abstract class AbstractGenerator
     }
 
     /**
-     * 确保主项目 composer.json 中存在 path repository 配置
+     * 确保主项目 composer.json 中存在 path repository 配置.
      */
     protected function ensurePathRepository(): void
     {
@@ -120,7 +120,7 @@ abstract class AbstractGenerator
     }
 
     /**
-     * 生成 composer.json
+     * 生成 composer.json.
      */
     protected function generateComposerJson(): void
     {
@@ -143,15 +143,15 @@ abstract class AbstractGenerator
                 array_filter([
                     'name' => $this->data['author'] ?: null,
                     'email' => $this->data['email'] ?: null,
-                ])
+                ]),
             ];
         }
 
-        if (!empty($this->data['autoload_path'])) {
+        if (! empty($this->data['autoload_path'])) {
             $composer['autoload'] = [
                 'psr-4' => [
-                    $this->getNamespace() . '\\' => $this->data['autoload_path']
-                ]
+                    $this->getNamespace() . '\\' => $this->data['autoload_path'],
+                ],
             ];
         }
 
@@ -167,7 +167,7 @@ abstract class AbstractGenerator
     }
 
     /**
-     * 扩展 composer.json 配置
+     * 扩展 composer.json 配置.
      */
     protected function extendComposerJson(array $composer): array
     {
@@ -175,7 +175,7 @@ abstract class AbstractGenerator
     }
 
     /**
-     * 生成 README.md
+     * 生成 README.md.
      */
     protected function generateReadme(): void
     {
@@ -185,7 +185,7 @@ abstract class AbstractGenerator
     }
 
     /**
-     * 生成 Hook 文件（根目录 hook.php）
+     * 生成 Hook 文件（根目录 hook.php）.
      */
     protected function generateHookFile(): void
     {
@@ -197,7 +197,40 @@ abstract class AbstractGenerator
     }
 
     /**
-     * 生成 ServiceProvider
+     * 生成路由文件（routes/admin.php）.
+     */
+    protected function generateRouteFile(): void
+    {
+        File::ensureDirectoryExists($this->path . '/routes');
+
+        $prefix = $this->getRoutePrefix();
+        $content = <<<PHP
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+Route::prefix(config('catch.route.prefix') . '/{$prefix}')
+    ->middleware(config('catch.route.middlewares', []))
+    ->group(function () {
+    // next
+});
+PHP;
+        File::put($this->path . '/routes/admin.php', $content);
+        $this->command->info('  ✓ routes/admin.php');
+    }
+
+    /**
+     * 从包名获取路由前缀
+     */
+    protected function getRoutePrefix(): string
+    {
+        $parts = explode('/', $this->data['name']);
+
+        return end($parts);
+    }
+
+    /**
+     * 生成 ServiceProvider.
      */
     protected function generateServiceProvider(): void
     {
@@ -227,17 +260,17 @@ PHP;
     }
 
     /**
-     * 获取命名空间
+     * 获取命名空间.
      */
     protected function getNamespace(): string
     {
         return collect(explode('/', $this->data['name']))
-            ->map(fn($p) => Str::studly($p))
+            ->map(fn ($p) => Str::studly($p))
             ->implode('\\');
     }
 
     /**
-     * 获取插件路径
+     * 获取插件路径.
      */
     public function getPath(): string
     {
@@ -245,7 +278,7 @@ PHP;
     }
 
     /**
-     * 显示结果
+     * 显示结果.
      */
     protected function displayResult(): void
     {

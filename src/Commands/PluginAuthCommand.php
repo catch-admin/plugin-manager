@@ -2,11 +2,10 @@
 
 namespace Catch\Plugin\Commands;
 
-use Catch\Exceptions\FailedException;
 use Catch\Plugin\Services\PluginApiService;
 use Catch\Plugin\Support\ComposerAuth;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\File;
+
 use function Laravel\Prompts\text;
 
 class PluginAuthCommand extends Command

@@ -30,8 +30,8 @@
 
             <el-select v-model="filterFree" placeholder="价格" clearable class="!w-24" @change="handleSearch">
                 <el-option label="全部" value="" />
-                <el-option label="免费" :value="true" />
-                <el-option label="付费" :value="false" />
+                <el-option label="积分" value="points" />
+                <el-option label="付费" value="cash" />
             </el-select>
 
             <el-select v-model="filterOfficial" placeholder="来源" clearable class="!w-24" @change="handleSearch">
@@ -115,8 +115,8 @@
                                 </div>
                             </div>
                             <div class="flex-shrink-0 text-right">
-                                <div v-if="plugin.is_free">
-                                    <el-tag type="success" size="small">免费</el-tag>
+                                <div v-if="plugin.payment_type === 'points'">
+                                    <el-tag type="success" size="small">{{ plugin.points_price }} 积分</el-tag>
                                 </div>
                                 <div v-else class="space-y-0.5">
                                     <div class="text-xs text-gray-600 dark:text-gray-400">{{ plugin.formatted_price_yearly }}/年</div>
@@ -213,8 +213,6 @@
                                                 <div class="flex items-center justify-between w-full gap-2">
                                                     <span>v{{ ver.name }}</span>
                                                     <span class="flex items-center gap-1">
-                                                        <el-tag v-if="ver.is_free" type="success" size="small" effect="plain">免费</el-tag>
-                                                        <el-tag v-else type="warning" size="small" effect="plain">付费</el-tag>
                                                         <span class="text-xs text-gray-400">{{ ver.size }}</span>
                                                       </span>
                                                 </div>
@@ -253,8 +251,6 @@
                                             <div class="flex items-center justify-between w-full gap-2">
                                                 <span>v{{ ver.name }}</span>
                                                 <span class="flex items-center gap-1">
-                                                  <el-tag v-if="ver.is_free" type="success" size="small" effect="plain">免费</el-tag>
-                                                  <el-tag v-else type="warning" size="small" effect="plain">付费</el-tag>
                                                   <span class="text-xs text-gray-400">{{ ver.size }}</span>
                                                 </span>
                                             </div>
@@ -342,7 +338,7 @@ const plugins = ref<Plugin[]>([])
 const categories = ref<{ id: number; name: string }[]>([])
 const searchKeyword = ref('')
 const selectedCategory = ref<number | ''>('')
-const filterFree = ref<boolean | ''>('')
+const filterFree = ref<string | ''>('')
 const filterOfficial = ref<boolean | ''>('')
 const loggedInUser = ref<string | null>(null)
 
@@ -382,7 +378,7 @@ const fetchPlugins = async () => {
         if (token) params.token = token
         if (searchKeyword.value) params.title = searchKeyword.value
         if (selectedCategory.value) params.category_id = selectedCategory.value
-        if (filterFree.value !== '') params.is_free = filterFree.value
+        if (filterFree.value !== '') params.payment_type = filterFree.value
         if (filterOfficial.value !== '') params.is_official = filterOfficial.value
 
         http.get('plugins', params).then((response: any) => {

@@ -3,13 +3,14 @@
 namespace Catch\Plugin;
 
 use Catch\Plugin\Commands\InstallCommand;
+use Catch\Plugin\Commands\PluginAuthCommand;
 use Catch\Plugin\Commands\PluginClearCommand;
 use Catch\Plugin\Commands\PluginInitCommand;
 use Catch\Plugin\Commands\PluginOptimizeCommand;
 use Catch\Plugin\Commands\PluginPackCommand;
 use Catch\Plugin\Support\Plugin;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\ServiceProvider;
-use Catch\Plugin\Commands\PluginAuthCommand;
 
 class PluginServiceProvider extends ServiceProvider
 {
@@ -30,7 +31,7 @@ class PluginServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // 加载路由
-        $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
 
         // 加载插件路由（仅在未缓存时）
         $this->loadPluginRoutes();
@@ -40,7 +41,7 @@ class PluginServiceProvider extends ServiceProvider
             $viewPath = base_path('web' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'views');
 
             $this->publishes([
-               $this->getPluginView() => $viewPath . DIRECTORY_SEPARATOR . 'plugin',
+                $this->getPluginView() => $viewPath . DIRECTORY_SEPARATOR . 'plugin',
             ], 'plugin-view');
         }
 
@@ -55,9 +56,11 @@ class PluginServiceProvider extends ServiceProvider
     }
 
     /**
-     * 加载插件路由
+     * 加载插件路由.
      *
      * 如果路由已缓存则跳过，否则从 plugins.json 或插件目录加载
+     *
+     * @throws FileNotFoundException
      */
     protected function loadPluginRoutes(): void
     {

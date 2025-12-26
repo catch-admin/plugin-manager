@@ -8,7 +8,7 @@ use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\spin;
 
 /**
- * Composer 包生成器
+ * Composer 包生成器.
  */
 class LibraryGenerator extends AbstractGenerator
 {
@@ -87,9 +87,10 @@ class LibraryGenerator extends AbstractGenerator
         $relativePath = $pluginDir . '/' . $this->data['name'] . '/src/';
 
         $composer->modify(function ($composerJson) use ($namespace, $relativePath) {
-            if (!isset($composerJson['autoload']['psr-4'][$namespace])) {
+            if (! isset($composerJson['autoload']['psr-4'][$namespace])) {
                 $composerJson['autoload']['psr-4'][$namespace] = $relativePath;
             }
+
             return $composerJson;
         });
 

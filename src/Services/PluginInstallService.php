@@ -4,18 +4,18 @@ namespace Catch\Plugin\Services;
 
 use Catch\Plugin\Enums\PluginType;
 use Catch\Plugin\Exceptions\ComposerException;
+use Catch\Plugin\Exceptions\DownloadFailedException;
 use Catch\Plugin\Exceptions\InstallFailedException;
 use Catch\Plugin\Exceptions\NpmPackageException;
+use Catch\Plugin\Exceptions\UnInstallFailedException;
 use Catch\Plugin\Support\ComposerPackageInstaller;
 use Catch\Plugin\Support\InstalledPluginManager;
 use Catch\Plugin\Support\NpmPackageInstaller;
 use Catch\Plugin\Support\PluginHookExecutor;
-use Catch\Plugin\Exceptions\UnInstallFailedException;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\File;
-use ZipArchive;
-use Catch\Plugin\Exceptions\DownloadFailedException;
 use Throwable;
+use ZipArchive;
 
 /**
  * 插件安装服务
@@ -46,16 +46,17 @@ class PluginInstallService
     }
 
     /**
-     * 安装插件
+     * 安装插件.
      *
-     * @param string $packageName 包名 (vendor/package)
-     * @param string $version 版本号
-     * @param string $pluginId 插件 ID（用于记录）
-     * @param callable $onProgress 进度回调 fn(step, percent, message)
-     * @param callable $onLog 日志回调 fn(message, type)
-     * @param string $type 插件类型（library, plugin, module, project）
-     * @param string $token 认证 Token（非 Library 类型需要下载时使用）
+     * @param  string  $packageName  包名 (vendor/package)
+     * @param  string  $version  版本号
+     * @param  string  $pluginId  插件 ID（用于记录）
+     * @param  callable  $onProgress  进度回调 fn(step, percent, message)
+     * @param  callable  $onLog  日志回调 fn(message, type)
+     * @param  string  $type  插件类型（library, plugin, module, project）
+     * @param  string  $token  认证 Token（非 Library 类型需要下载时使用）
      * @return array 安装结果
+     *
      * @throws InstallFailedException
      */
     public function install(
@@ -83,15 +84,16 @@ class PluginInstallService
     }
 
     /**
-     * 通过 Composer 安装插件（Library 类型）
+     * 通过 Composer 安装插件（Library 类型）.
      *
-     * @param string $packageName 包名
-     * @param string $version 版本号
-     * @param string $pluginId 插件 ID
-     * @param callable $onProgress 进度回调
-     * @param callable $onLog 日志回调
-     * @param string $token
+     * @param  string  $packageName  包名
+     * @param  string  $version  版本号
+     * @param  string  $pluginId  插件 ID
+     * @param  callable  $onProgress  进度回调
+     * @param  callable  $onLog  日志回调
+     * @param  string  $token
      * @return array
+     *
      * @throws ComposerException
      * @throws FileNotFoundException
      * @throws NpmPackageException
@@ -133,16 +135,17 @@ class PluginInstallService
     }
 
     /**
-     * 通过下载解压安装插件（Plugin/Module/Project 类型）
+     * 通过下载解压安装插件（Plugin/Module/Project 类型）.
      *
-     * @param string $packageName
-     * @param string $version
-     * @param string $pluginId
-     * @param callable $onProgress
-     * @param callable $onLog
-     * @param string $token
-     * @param string $type
+     * @param  string  $packageName
+     * @param  string  $version
+     * @param  string  $pluginId
+     * @param  callable  $onProgress
+     * @param  callable  $onLog
+     * @param  string  $token
+     * @param  string  $type
      * @return array
+     *
      * @throws DownloadFailedException
      * @throws NpmPackageException
      * @throws FileNotFoundException
@@ -165,14 +168,14 @@ class PluginInstallService
         $tempFile = $tempDir . '/' . $pluginId . '_' . time() . '.zip';
 
         // 确保临时目录存在
-        if (!File::exists($tempDir)) {
+        if (! File::exists($tempDir)) {
             File::makeDirectory($tempDir, 0755, true);
         }
         $onProgress('download', 20, '正在下载插件...');
 
         $downloadResult = $this->pluginApi->downloadPlugin($token, $pluginId, $tempFile, $version);
 
-        if (!$downloadResult) {
+        if (! $downloadResult) {
             throw new DownloadFailedException('插件下载失败，请检查网络连接或稍后重试');
         }
 
@@ -187,7 +190,7 @@ class PluginInstallService
         $dateDir = date('Y-m-d');
         $extractBase = config('plugin.path') . '/' . $dateDir;
 
-        if (!File::exists($extractBase)) {
+        if (! File::exists($extractBase)) {
             File::makeDirectory($extractBase, 0755, true);
         }
 
@@ -195,7 +198,7 @@ class PluginInstallService
         $tempExtractDir = $tempDir . '/extract_' . time();
         $extractResult = $this->extractZip($tempFile, $tempExtractDir);
 
-        if (!$extractResult) {
+        if (! $extractResult) {
             // 清理临时文件
             File::delete($tempFile);
             throw new DownloadFailedException('插件解压失败，请检查磁盘空间是否充足');
@@ -224,7 +227,7 @@ class PluginInstallService
 
             $composerData = $this->hookExecutor->getComposerData($targetDir);
 
-            if (!$composerData) {
+            if (! $composerData) {
                 $onLog('警告: 未找到 composer.json 文件', 'warning');
             } else {
                 $onLog('插件名称: ' . ($composerData['title'] ?? $composerData['name'] ?? '未知'), 'info');
@@ -244,7 +247,7 @@ class PluginInstallService
             ];
 
             $beforeResult = $this->hookExecutor->executeBefore($targetDir, $context);
-            if (!$beforeResult) {
+            if (! $beforeResult) {
                 // File::deleteDirectory($targetDir);
                 throw new DownloadFailedException('插件安装检查未通过');
             }
@@ -297,7 +300,7 @@ class PluginInstallService
     }
 
     /**
-     * 安装 Composer 依赖（require 和 require-dev）
+     * 安装 Composer 依赖（require 和 require-dev）.
      */
     protected function installComposerDependencies(array $composerData, callable $onProgress, callable $onLog): void
     {
@@ -331,7 +334,7 @@ class PluginInstallService
                 $onLog("依赖 {$package} 安装失败: " . $e->getMessage(), 'warning');
             }
             $installed++;
-            $onProgress('composer', (int)(($installed / $total) * 100), "已安装 {$installed}/{$total}");
+            $onProgress('composer', (int) (($installed / $total) * 100), "已安装 {$installed}/{$total}");
         }
 
         // 安装 require-dev 依赖
@@ -343,14 +346,14 @@ class PluginInstallService
                 $onLog("开发依赖 {$package} 安装失败: " . $e->getMessage(), 'warning');
             }
             $installed++;
-            $onProgress('composer', (int)(($installed / $total) * 100), "已安装 {$installed}/{$total}");
+            $onProgress('composer', (int) (($installed / $total) * 100), "已安装 {$installed}/{$total}");
         }
 
         $onProgress('composer', 100, 'Composer 依赖安装完成');
     }
 
     /**
-     * 解压 ZIP 文件
+     * 解压 ZIP 文件.
      */
     protected function extractZip(string $zipFile, string $extractTo): bool
     {
@@ -361,7 +364,7 @@ class PluginInstallService
         }
 
         // 确保目标目录存在
-        if (!File::exists($extractTo)) {
+        if (! File::exists($extractTo)) {
             File::makeDirectory($extractTo, 0755, true);
         }
 
@@ -372,9 +375,9 @@ class PluginInstallService
     }
 
     /**
-     * 查找插件目录（处理 zip 内可能有一层目录的情况）
+     * 查找插件目录（处理 zip 内可能有一层目录的情况）.
      *
-     * @param string $extractDir 解压目录
+     * @param  string  $extractDir  解压目录
      * @return string
      */
     protected function findPluginDirectory(string $extractDir): string
@@ -399,12 +402,13 @@ class PluginInstallService
     }
 
     /**
-     * 卸载插件
+     * 卸载插件.
      *
-     * @param string $name Composer 包名
-     * @param callable $onProgress 进度回调
-     * @param callable $onLog 日志回调
+     * @param  string  $name  Composer 包名
+     * @param  callable  $onProgress  进度回调
+     * @param  callable  $onLog  日志回调
      * @return array 卸载结果
+     *
      * @throws UnInstallFailedException
      */
     public function uninstall(
@@ -416,7 +420,7 @@ class PluginInstallService
             $onProgress('check', 0, '检查插件信息...');
             $pluginInfo = $this->pluginManager->get($name);
 
-            if (!$pluginInfo) {
+            if (! $pluginInfo) {
                 throw new \Exception('插件未安装或已被卸载');
             }
 
@@ -438,12 +442,13 @@ class PluginInstallService
     }
 
     /**
-     * 通过 Composer 卸载插件（Library 类型）
+     * 通过 Composer 卸载插件（Library 类型）.
      *
-     * @param string $name 包名
-     * @param callable $onProgress 进度回调
-     * @param callable $onLog 日志回调
+     * @param  string  $name  包名
+     * @param  callable  $onProgress  进度回调
+     * @param  callable  $onLog  日志回调
      * @return array
+     *
      * @throws ComposerException
      * @throws FileNotFoundException
      */
@@ -467,12 +472,13 @@ class PluginInstallService
     }
 
     /**
-     * 通过删除目录卸载插件（Plugin/Module/Project 类型）
+     * 通过删除目录卸载插件（Plugin/Module/Project 类型）.
      *
-     * @param string $name 包名
-     * @param array $pluginInfo 插件信息
-     * @param callable $onProgress 进度回调
+     * @param  string  $name  包名
+     * @param  array  $pluginInfo  插件信息
+     * @param  callable  $onProgress  进度回调
      * @return array
+     *
      * @throws FileNotFoundException
      */
     protected function uninstallByDelete(
@@ -483,7 +489,7 @@ class PluginInstallService
         $pluginPath = $pluginInfo['path'] ?? '';
 
         // 执行卸载 Hook
-        if (!empty($pluginPath) && File::exists($pluginPath)) {
+        if (! empty($pluginPath) && File::exists($pluginPath)) {
             $composerData = $this->hookExecutor->getComposerData($pluginPath);
             $context = [
                 'plugin_path' => $pluginPath,
@@ -495,7 +501,7 @@ class PluginInstallService
             ];
 
             $beforeResult = $this->hookExecutor->executeBeforeUninstall($pluginPath, $context);
-            if (!$beforeResult) {
+            if (! $beforeResult) {
                 throw new \Exception('插件卸载检查未通过');
             }
 
@@ -505,7 +511,7 @@ class PluginInstallService
         // 删除插件目录
         $onProgress('cleanup', 0, '正在清理...');
 
-        if (!empty($pluginPath) && File::exists($pluginPath)) {
+        if (! empty($pluginPath) && File::exists($pluginPath)) {
             File::deleteDirectory($pluginPath);
         }
 

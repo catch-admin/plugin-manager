@@ -8,7 +8,7 @@ use Illuminate\Support\Composer;
 use Illuminate\Support\Str;
 
 /**
- * Composer 包安装器
+ * Composer 包安装器.
  *
  * 使用 Laravel 内置的 Composer 类来安装和卸载插件包
  */
@@ -25,9 +25,9 @@ class ComposerPackageInstaller
     }
 
     /**
-     * 设置 token
+     * 设置 token.
      *
-     * @param string $token
+     * @param  string  $token
      * @return $this
      */
     public function token(string $token): static
@@ -38,13 +38,14 @@ class ComposerPackageInstaller
     }
 
     /**
-     * 安装 Composer 包
+     * 安装 Composer 包.
      *
-     * @param string $packageName 包名
-     * @param string $version 版本号
-     * @param bool $dev 是否作为开发依赖
-     * @param callable|null $callback 输出回调（可选）
+     * @param  string  $packageName  包名
+     * @param  string  $version  版本号
+     * @param  bool  $dev  是否作为开发依赖
+     * @param  callable|null  $callback  输出回调（可选）
      * @return bool
+     *
      * @throws ComposerException
      */
     public function install(string $packageName, string $version, bool $dev = false, ?callable $callback = null): bool
@@ -57,7 +58,7 @@ class ComposerPackageInstaller
         try {
             return $this->runComposerCommand($command, $callback);
         } catch (ComposerException $e) {
-            $this->composer->modify(function ($composerJson) use ($packageName, $version){
+            $this->composer->modify(function ($composerJson) use ($packageName, $version) {
                 if (isset($composerJson['require'][$packageName])) {
                     if ($composerJson['require'][$packageName] == $version) {
                         unset($composerJson['require'][$packageName]);
@@ -71,11 +72,12 @@ class ComposerPackageInstaller
     }
 
     /**
-     * 卸载 Composer 包
+     * 卸载 Composer 包.
      *
-     * @param string $packageName 包名
-     * @param callable|null $callback 输出回调（可选）
+     * @param  string  $packageName  包名
+     * @param  callable|null  $callback  输出回调（可选）
      * @return bool
+     *
      * @throws ComposerException
      */
     public function uninstall(string $packageName, ?callable $callback = null): bool
@@ -86,12 +88,13 @@ class ComposerPackageInstaller
     }
 
     /**
-     * 从 composer.json 数据中安装包
+     * 从 composer.json 数据中安装包.
      *
-     * @param array $composerData composer.json 解析后的数据
-     * @param bool $dev 是否作为开发依赖
-     * @param callable|null $callback 输出回调（可选）
+     * @param  array  $composerData  composer.json 解析后的数据
+     * @param  bool  $dev  是否作为开发依赖
+     * @param  callable|null  $callback  输出回调（可选）
      * @return bool
+     *
      * @throws ComposerException
      */
     public function installFromComposerData(array $composerData, bool $dev = false, ?callable $callback = null): bool
@@ -102,7 +105,7 @@ class ComposerPackageInstaller
     }
 
     /**
-     * 检查包是否已安装
+     * 检查包是否已安装.
      */
     public function isInstalled(string $packageName): bool
     {
@@ -110,7 +113,8 @@ class ComposerPackageInstaller
     }
 
     /**
-     * 执行 Composer 命令（核心方法）
+     * 执行 Composer 命令（核心方法）.
+     *
      * @throws ComposerException
      */
     protected function runComposerCommand(string $command, ?callable $callback = null): bool
@@ -122,7 +126,7 @@ class ComposerPackageInstaller
             $env['COMPOSER_AUTH'] = json_encode([
                 'bearer' => [
                     parse_url(config('plugin.plugin_host'), PHP_URL_HOST) => $this->token,
-                ]
+                ],
             ]);
         }
 
@@ -132,21 +136,22 @@ class ComposerPackageInstaller
 
         if (! $result->successful()) {
             if (Str::of($result->errorOutput())->contains('HTTP 401')) {
-                throw new ComposerException("没有权限安装该扩展，请确认是否已购买?");
+                throw new ComposerException('没有权限安装该扩展，请确认是否已购买?');
             }
 
             if (Str::of($result->errorOutput())->contains('HTTP 404')) {
-                throw new ComposerException("该扩展资源未找到，请联系官方");
+                throw new ComposerException('该扩展资源未找到，请联系官方');
             }
 
-            throw new ComposerException("扩展安装失败");
+            throw new ComposerException('扩展安装失败');
         }
 
         return true;
     }
 
     /**
-     * 验证 composer.json 数据
+     * 验证 composer.json 数据.
+     *
      * @throws ComposerException
      */
     protected function validateComposerData(array $data): void
@@ -160,7 +165,7 @@ class ComposerPackageInstaller
     }
 
     /**
-     * 获取 Composer 命令字符串
+     * 获取 Composer 命令字符串.
      */
     protected function findComposer(): string
     {

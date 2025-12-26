@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
 /**
- * 模块生成器
+ * 模块生成器.
  */
 class ModuleGenerator extends AbstractGenerator
 {
@@ -103,6 +103,7 @@ class ModuleGenerator extends AbstractGenerator
     protected function getModuleName(): string
     {
         $parts = explode('/', $this->data['name']);
+
         return $parts[1] ?? '';
     }
 
@@ -120,7 +121,7 @@ class ModuleGenerator extends AbstractGenerator
 
     protected function packageModule(): void
     {
-        if (!$this->moduleDir) {
+        if (! $this->moduleDir) {
             return;
         }
 

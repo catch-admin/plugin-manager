@@ -5,7 +5,7 @@ namespace Catch\Plugin\Support;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 /**
- * 已安装插件管理器
+ * 已安装插件管理器.
  *
  * 使用 JSON 文件记录已安装的插件信息
  * 注意：此类需要在 Composer 环境中工作，因此使用原生 PHP 文件操作
@@ -13,12 +13,12 @@ use Illuminate\Contracts\Filesystem\FileNotFoundException;
 class InstalledPluginManager
 {
     /**
-     * 存储文件路径
+     * 存储文件路径.
      */
     protected ?string $storagePath = null;
 
     /**
-     * 缓存的插件数据
+     * 缓存的插件数据.
      */
     protected ?array $cache = null;
 
@@ -35,23 +35,26 @@ class InstalledPluginManager
     }
 
     /**
-     * 检查插件是否已安装
+     * 检查插件是否已安装.
      *
-     * @param string $name 包名，如 catchadmin/plugin
+     * @param  string  $name  包名，如 catchadmin/plugin
      * @return bool
+     *
      * @throws FileNotFoundException
      */
     public function isInstalled(string $name): bool
     {
         $plugins = $this->getAll();
+
         return isset($plugins[$name]);
     }
 
     /**
-     * 通过插件 ID 检查是否已安装
+     * 通过插件 ID 检查是否已安装.
      *
-     * @param string $pluginId API 返回的插件 ID
+     * @param  string  $pluginId  API 返回的插件 ID
      * @return bool
+     *
      * @throws FileNotFoundException
      */
     public function isInstalledById(string $pluginId): bool
@@ -62,18 +65,20 @@ class InstalledPluginManager
                 return true;
             }
         }
+
         return false;
     }
 
     /**
-     * 添加已安装插件记录
+     * 添加已安装插件记录.
      *
-     * @param array $data 插件信息
-     *   - name: 包名 (必需)
-     *   - plugin_id: API 插件 ID
-     *   - version: 版本号
-     *   - path: 安装路径
+     * @param  array  $data  插件信息
+     *                       - name: 包名 (必需)
+     *                       - plugin_id: API 插件 ID
+     *                       - version: 版本号
+     *                       - path: 安装路径
      * @return bool
+     *
      * @throws FileNotFoundException
      */
     public function add(array $data): bool
@@ -96,28 +101,31 @@ class InstalledPluginManager
     }
 
     /**
-     * 移除已安装插件记录
+     * 移除已安装插件记录.
      *
-     * @param string $name 包名
+     * @param  string  $name  包名
      * @return bool
+     *
      * @throws FileNotFoundException
      */
     public function remove(string $name): bool
     {
         $plugins = $this->getAll();
 
-        if (!isset($plugins[$name])) {
+        if (! isset($plugins[$name])) {
             return true; // 不存在视为成功
         }
 
         unset($plugins[$name]);
+
         return $this->save($plugins);
     }
 
     /**
-     * 获取所有已安装插件
+     * 获取所有已安装插件.
      *
      * @return array
+     *
      * @throws FileNotFoundException
      */
     public function getAll(): array
@@ -126,8 +134,9 @@ class InstalledPluginManager
             return $this->cache;
         }
 
-        if (!$this->storagePath || !file_exists($this->storagePath)) {
+        if (! $this->storagePath || ! file_exists($this->storagePath)) {
             $this->cache = [];
+
             return $this->cache;
         }
 
@@ -135,27 +144,31 @@ class InstalledPluginManager
         $data = json_decode($content, true);
 
         $this->cache = is_array($data) ? $data : [];
+
         return $this->cache;
     }
 
     /**
-     * 获取单个插件信息
+     * 获取单个插件信息.
      *
-     * @param string $name 包名
+     * @param  string  $name  包名
      * @return array|null
+     *
      * @throws FileNotFoundException
      */
     public function get(string $name): ?array
     {
         $plugins = $this->getAll();
+
         return $plugins[$name] ?? null;
     }
 
     /**
-     * 通过插件 ID 获取插件信息
+     * 通过插件 ID 获取插件信息.
      *
-     * @param string $pluginId API 插件 ID
+     * @param  string  $pluginId  API 插件 ID
      * @return array|null
+     *
      * @throws FileNotFoundException
      */
     public function getById(string $pluginId): ?array
@@ -166,22 +179,24 @@ class InstalledPluginManager
                 return array_merge(['name' => $name], $plugin);
             }
         }
+
         return null;
     }
 
     /**
-     * 更新插件信息
+     * 更新插件信息.
      *
-     * @param string $name 包名
-     * @param array $data 要更新的数据
+     * @param  string  $name  包名
+     * @param  array  $data  要更新的数据
      * @return bool
+     *
      * @throws FileNotFoundException
      */
     public function update(string $name, array $data): bool
     {
         $plugins = $this->getAll();
 
-        if (!isset($plugins[$name])) {
+        if (! isset($plugins[$name])) {
             return false;
         }
 
@@ -192,14 +207,14 @@ class InstalledPluginManager
     }
 
     /**
-     * 保存数据到文件
+     * 保存数据到文件.
      *
-     * @param array $plugins
+     * @param  array  $plugins
      * @return bool
      */
     protected function save(array $plugins): bool
     {
-        if (!$this->storagePath) {
+        if (! $this->storagePath) {
             return false;
         }
 
@@ -207,7 +222,7 @@ class InstalledPluginManager
 
         // 确保目录存在
         $directory = dirname($this->storagePath);
-        if (!is_dir($directory)) {
+        if (! is_dir($directory)) {
             mkdir($directory, 0755, true);
         }
 
@@ -217,7 +232,7 @@ class InstalledPluginManager
     }
 
     /**
-     * 清空缓存
+     * 清空缓存.
      */
     public function clearCache(): void
     {

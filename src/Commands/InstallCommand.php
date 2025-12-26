@@ -6,9 +6,8 @@ use Catch\Plugin\Support\Plugin;
 use Illuminate\Console\Command;
 use Illuminate\Support\Composer;
 
-
 /**
- * 租户安装
+ * 租户安装.
  */
 class InstallCommand extends Command
 {
@@ -19,6 +18,7 @@ class InstallCommand extends Command
 
     /**
      * @return void
+     *
      * @throws \JsonException
      */
     public function handle(): void
@@ -50,12 +50,12 @@ class InstallCommand extends Command
     {
         $composer = app(Composer::class)->setWorkingPath(base_path());
 
-        $composer->modify(function ($composer){
+        $composer->modify(function ($composer) {
             $repositories = $composer['repositories'] ?? [];
 
             $addRepository = [
                 'type' => 'composer',
-                'url' => config('plugin.plugin_host') . '/' . 'plugin'
+                'url' => config('plugin.plugin_host') . '/' . 'plugin',
             ];
 
             $isExist = false;
@@ -73,7 +73,6 @@ class InstallCommand extends Command
         });
     }
 
-
     protected function addMens(): void
     {
         Plugin::createMenus([
@@ -85,9 +84,9 @@ class InstallCommand extends Command
                         controllerMethod: 'index',
                         type: 2,
                         component: Plugin::view('plugin', 'index')
-                    )
+                    ),
                 ]
-            )
+            ),
         ]);
     }
 }

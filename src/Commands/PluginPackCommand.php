@@ -12,7 +12,7 @@ use function Laravel\Prompts\select;
 use function Laravel\Prompts\spin;
 
 /**
- * 插件打包命令
+ * 插件打包命令.
  */
 class PluginPackCommand extends Command
 {
@@ -26,22 +26,25 @@ class PluginPackCommand extends Command
         // 选择插件
         $name = $this->selectPlugin();
 
-        if (!$name) {
+        if (! $name) {
             $this->error('未找到可用插件');
+
             return self::FAILURE;
         }
 
         $pluginPath = config('plugin.develop') . DIRECTORY_SEPARATOR . $name;
 
-        if (!File::isDirectory($pluginPath)) {
+        if (! File::isDirectory($pluginPath)) {
             $this->error("插件目录不存在: {$pluginPath}");
+
             return self::FAILURE;
         }
 
         // 读取 composer.json
         $composerPath = $pluginPath . DIRECTORY_SEPARATOR . 'composer.json';
-        if (!File::exists($composerPath)) {
+        if (! File::exists($composerPath)) {
             $this->error('插件缺少 composer.json');
+
             return self::FAILURE;
         }
 
@@ -68,21 +71,21 @@ class PluginPackCommand extends Command
 
         // 创建 zip
         $fileCount = spin(
-            callback: function () use ($zipPath, $pluginPath, $name) {
+            callback: function () use ($zipPath, $pluginPath) {
                 // 确保插件路径存在
-                if (!is_dir($pluginPath)) {
+                if (! is_dir($pluginPath)) {
                     throw new \RuntimeException("插件目录不存在: {$pluginPath}");
                 }
 
                 // 验证输出目录权限
                 $outputDir = dirname($zipPath);
-                if (!is_dir($outputDir)) {
-                    if (!mkdir($outputDir, 0755, true)) {
+                if (! is_dir($outputDir)) {
+                    if (! mkdir($outputDir, 0755, true)) {
                         throw new \RuntimeException("无法创建输出目录: {$outputDir}");
                     }
                 }
 
-                if (!is_writable($outputDir)) {
+                if (! is_writable($outputDir)) {
                     throw new \RuntimeException("输出目录不可写: {$outputDir}");
                 }
 
@@ -110,26 +113,26 @@ class PluginPackCommand extends Command
 
                     // 验证临时文件
                     clearstatcache();
-                    if (!file_exists($tempFile) || filesize($tempFile) === 0) {
-                        throw new \RuntimeException("临时 Zip 文件创建失败");
+                    if (! file_exists($tempFile) || filesize($tempFile) === 0) {
+                        throw new \RuntimeException('临时 Zip 文件创建失败');
                     }
 
                     // 重命名为最终文件名
-                    if (!rename($tempFile, $zipPath)) {
+                    if (! rename($tempFile, $zipPath)) {
                         // 如果重命名失败，尝试复制
-                        if (!copy($tempFile, $zipPath)) {
-                            throw new \RuntimeException("无法将临时文件移动到目标位置");
+                        if (! copy($tempFile, $zipPath)) {
+                            throw new \RuntimeException('无法将临时文件移动到目标位置');
                         }
                         unlink($tempFile);
                     }
 
                     // 验证最终文件
                     clearstatcache();
-                    if (!file_exists($zipPath) || filesize($zipPath) === 0) {
+                    if (! file_exists($zipPath) || filesize($zipPath) === 0) {
                         throw new \RuntimeException(
                             "Zip 文件未被正确创建\n" .
                             "路径: {$zipPath}\n" .
-                            "请检查: 1) 目录权限 2) 磁盘空间 3) 杀毒软件是否拦截"
+                            '请检查: 1) 目录权限 2) 磁盘空间 3) 杀毒软件是否拦截'
                         );
                     }
 
@@ -158,20 +161,22 @@ class PluginPackCommand extends Command
     }
 
     /**
-     * 选择插件
+     * 选择插件.
+     *
      * @throws FileNotFoundException
      */
     protected function selectPlugin(): ?string
     {
         // 验证配置是否加载
-        if (!config()->has('plugin.develop')) {
+        if (! config()->has('plugin.develop')) {
             $this->error('插件配置未加载，请确保 PluginServiceProvider 已正确注册');
+
             return null;
         }
 
         $pluginsDir = config('plugin.develop');
 
-        if (!File::isDirectory($pluginsDir)) {
+        if (! File::isDirectory($pluginsDir)) {
             return null;
         }
 
@@ -192,7 +197,7 @@ class PluginPackCommand extends Command
 
             // 查找第二层目录
             foreach (File::directories($vendorDir) as $packageDir) {
-                $composerPath = $packageDir .  DIRECTORY_SEPARATOR .'composer.json';
+                $composerPath = $packageDir . DIRECTORY_SEPARATOR . 'composer.json';
                 if (File::exists($composerPath)) {
                     $data = json_decode(File::get($composerPath), true);
                     $name = $data['name'] ?? basename($vendorDir) . DIRECTORY_SEPARATOR . basename($packageDir);
@@ -213,7 +218,7 @@ class PluginPackCommand extends Command
     }
 
     /**
-     * 统计 zip 中的文件数量
+     * 统计 zip 中的文件数量.
      */
     protected function countFilesInZip(Zipper $zipper): int
     {
@@ -221,7 +226,7 @@ class PluginPackCommand extends Command
     }
 
     /**
-     * 将目录添加到 Zip 文件中
+     * 将目录添加到 Zip 文件中.
      */
     protected function addDirectoryToZip(\ZipArchive $zip, string $sourcePath, array $excludes = []): int
     {
@@ -254,7 +259,7 @@ class PluginPackCommand extends Command
                 $zip->addEmptyDir($zipPath);
             } elseif ($file->isFile()) {
                 // 添加文件
-                if (!$zip->addFile($filePath, $zipPath)) {
+                if (! $zip->addFile($filePath, $zipPath)) {
                     throw new \RuntimeException("无法添加文件到 Zip: {$filePath}");
                 }
                 $fileCount++;
@@ -265,7 +270,7 @@ class PluginPackCommand extends Command
     }
 
     /**
-     * 检查文件/目录是否应该被排除
+     * 检查文件/目录是否应该被排除.
      */
     protected function shouldExclude(string $relativePath, array $excludes): bool
     {

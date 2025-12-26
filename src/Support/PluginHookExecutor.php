@@ -5,8 +5,8 @@ namespace Catch\Plugin\Support;
 use Illuminate\Support\Facades\Log;
 
 /**
- * 插件 Hook 执行器
- * 
+ * 插件 Hook 执行器.
+ *
  * 支持两种 Hook 格式：
  * 1. 类格式：src/Hook.php（优先）
  * 2. 数组格式：hook.php（兼容）
@@ -14,10 +14,10 @@ use Illuminate\Support\Facades\Log;
 class PluginHookExecutor
 {
     /**
-     * 执行安装前钩子
+     * 执行安装前钩子.
      *
-     * @param string $pluginPath 插件目录路径
-     * @param array $context 上下文信息
+     * @param  string  $pluginPath  插件目录路径
+     * @param  array  $context  上下文信息
      * @return bool 返回 false 将阻止安装
      */
     public function executeBefore(string $pluginPath, array $context = []): bool
@@ -26,10 +26,10 @@ class PluginHookExecutor
     }
 
     /**
-     * 执行安装后钩子
+     * 执行安装后钩子.
      *
-     * @param string $pluginPath 插件目录路径
-     * @param array $context 上下文信息
+     * @param  string  $pluginPath  插件目录路径
+     * @param  array  $context  上下文信息
      * @return void
      */
     public function executeAfter(string $pluginPath, array $context = []): void
@@ -38,10 +38,10 @@ class PluginHookExecutor
     }
 
     /**
-     * 执行卸载前钩子
+     * 执行卸载前钩子.
      *
-     * @param string $pluginPath 插件目录路径
-     * @param array $context 上下文信息
+     * @param  string  $pluginPath  插件目录路径
+     * @param  array  $context  上下文信息
      * @return bool 返回 false 将阻止卸载
      */
     public function executeBeforeUninstall(string $pluginPath, array $context = []): bool
@@ -50,10 +50,10 @@ class PluginHookExecutor
     }
 
     /**
-     * 执行卸载后钩子
+     * 执行卸载后钩子.
      *
-     * @param string $pluginPath 插件目录路径
-     * @param array $context 上下文信息
+     * @param  string  $pluginPath  插件目录路径
+     * @param  array  $context  上下文信息
      * @return void
      */
     public function executeAfterUninstall(string $pluginPath, array $context = []): void
@@ -62,11 +62,11 @@ class PluginHookExecutor
     }
 
     /**
-     * 执行指定的钩子
+     * 执行指定的钩子.
      *
-     * @param string $pluginPath 插件目录路径
-     * @param string $hookName 钩子名称
-     * @param array $context 上下文信息
+     * @param  string  $pluginPath  插件目录路径
+     * @param  string  $hookName  钩子名称
+     * @param  array  $context  上下文信息
      * @return bool|void
      */
     protected function executeHook(string $pluginPath, string $hookName, array $context = []): mixed
@@ -87,11 +87,11 @@ class PluginHookExecutor
     }
 
     /**
-     * 执行类格式的 Hook（src/Hook.php）
+     * 执行类格式的 Hook（src/Hook.php）.
      *
-     * @param string $pluginPath 插件目录路径
-     * @param string $hookName 钩子名称
-     * @param array $context 上下文信息
+     * @param  string  $pluginPath  插件目录路径
+     * @param  string  $hookName  钩子名称
+     * @param  array  $context  上下文信息
      * @return mixed|null 返回 null 表示未找到类格式 Hook
      */
     protected function executeClassHook(string $pluginPath, string $hookName, array $context): mixed
@@ -104,14 +104,14 @@ class PluginHookExecutor
         }
 
         // 如果类不存在，尝试手动加载
-        if (!class_exists($hookClass)) {
+        if (! class_exists($hookClass)) {
             $hookFile = rtrim($pluginPath, '/\\') . '/src/Hook.php';
             if (file_exists($hookFile)) {
                 require_once $hookFile;
             }
         }
 
-        if (!class_exists($hookClass)) {
+        if (! class_exists($hookClass)) {
             return null; // 仍然不存在，回退到数组格式
         }
 
@@ -127,8 +127,9 @@ class PluginHookExecutor
 
         $methodName = $methodMap[$hookName] ?? $hookName;
 
-        if (!method_exists($hookClass, $methodName)) {
+        if (! method_exists($hookClass, $methodName)) {
             Log::info("插件 Hook 类方法不存在: {$hookClass}::{$methodName}");
+
             return $hookName === 'before' || $hookName === 'beforeUninstall' ? true : null;
         }
 
@@ -158,32 +159,35 @@ class PluginHookExecutor
     }
 
     /**
-     * 执行数组格式的 Hook（hook.php）
+     * 执行数组格式的 Hook（hook.php）.
      *
-     * @param string $pluginPath 插件目录路径
-     * @param string $hookName 钩子名称
-     * @param array $context 上下文信息
+     * @param  string  $pluginPath  插件目录路径
+     * @param  string  $hookName  钩子名称
+     * @param  array  $context  上下文信息
      * @return mixed
      */
     protected function executeArrayHook(string $pluginPath, string $hookName, array $context): mixed
     {
         $hookFile = rtrim($pluginPath, '/\\') . '/hook.php';
 
-        if (!file_exists($hookFile)) {
+        if (! file_exists($hookFile)) {
             Log::info("插件 Hook 文件不存在，跳过执行: {$hookFile}");
+
             return $hookName === 'before' || $hookName === 'beforeUninstall' ? true : null;
         }
 
         try {
             $hooks = require $hookFile;
 
-            if (!is_array($hooks)) {
+            if (! is_array($hooks)) {
                 Log::warning("插件 Hook 文件格式错误，应返回数组: {$hookFile}");
+
                 return $hookName === 'before' || $hookName === 'beforeUninstall' ? true : null;
             }
 
-            if (!isset($hooks[$hookName]) || !is_callable($hooks[$hookName])) {
+            if (! isset($hooks[$hookName]) || ! is_callable($hooks[$hookName])) {
                 Log::info("插件 Hook [{$hookName}] 未定义或不可调用: {$hookFile}");
+
                 return $hookName === 'before' || $hookName === 'beforeUninstall' ? true : null;
             }
 
@@ -210,9 +214,9 @@ class PluginHookExecutor
     }
 
     /**
-     * 从 composer.json 获取 Hook 类名
+     * 从 composer.json 获取 Hook 类名.
      *
-     * @param string $pluginPath 插件目录路径
+     * @param  string  $pluginPath  插件目录路径
      * @return string|null
      */
     protected function getHookClass(string $pluginPath): ?string
@@ -228,20 +232,21 @@ class PluginHookExecutor
     }
 
     /**
-     * 获取插件的 composer.json 数据
+     * 获取插件的 composer.json 数据.
      *
-     * @param string $pluginPath 插件目录路径
+     * @param  string  $pluginPath  插件目录路径
      * @return array|null
      */
     public function getComposerData(string $pluginPath): ?array
     {
         $composerFile = rtrim($pluginPath, '/\\') . '/composer.json';
 
-        if (!file_exists($composerFile)) {
+        if (! file_exists($composerFile)) {
             return null;
         }
 
         $content = file_get_contents($composerFile);
+
         return json_decode($content, true);
     }
 }

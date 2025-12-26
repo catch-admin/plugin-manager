@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Catch\Plugin\Http\Controllers\PluginController;
 use Catch\Middleware\AuthMiddleware;
+use Catch\Plugin\Http\Controllers\PluginController;
+use Illuminate\Support\Facades\Route;
 
 // 插件 API 路由
 Route::prefix(config('catch.route.prefix') . '/plugins')->middleware(AuthMiddleware::class)->group(function () {
@@ -38,5 +38,3 @@ Route::prefix(config('catch.route.prefix') . '/plugins')->middleware(AuthMiddlew
     // 例如：/test/test/index → 插件 test/test 的 resource/view/index.vue
     Route::get('/{plugin_name}/{path}', [PluginController::class, 'pluginView'])->where('path', '.*');
 });
-
-

@@ -10,6 +10,7 @@ use Catch\Plugin\Support\CollectVueDepsFile;
 use Catch\Plugin\Support\InstalledPluginManager;
 use Catch\Plugin\Support\Plugin;
 use Catch\Support\SseResponse;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -18,10 +19,11 @@ class PluginController extends Controller
     public function __construct(
         protected PluginApiService $pluginApi,
         protected PluginInstallService $installService
-    ) {}
+    ) {
+    }
 
     /**
-     * 登录获取 Token
+     * 登录获取 Token.
      */
     public function login(Request $request)
     {
@@ -45,19 +47,19 @@ class PluginController extends Controller
     }
 
     /**
-     * 登出
+     * 登出.
      */
     public function logout(Request $request)
     {
         $token = $request->get('token');
 
-        if (!$token) {
+        if (! $token) {
             throw new FailedException('Token 不能为空');
         }
 
         $result = $this->pluginApi->logout($token);
 
-        if (!$result) {
+        if (! $result) {
             throw new FailedException('登出失败');
         }
 
@@ -65,19 +67,19 @@ class PluginController extends Controller
     }
 
     /**
-     * 获取当前用户信息
+     * 获取当前用户信息.
      */
     public function user(Request $request)
     {
         $token = $request->get('token');
 
-        if (!$token) {
+        if (! $token) {
             throw new FailedException('Token 不能为空');
         }
 
         $result = $this->pluginApi->getUser($token);
 
-        if (!$result) {
+        if (! $result) {
             throw new FailedException('获取用户信息失败');
         }
 
@@ -85,7 +87,7 @@ class PluginController extends Controller
     }
 
     /**
-     * 获取分类列表（token 可选）
+     * 获取分类列表（token 可选）.
      */
     public function categories(Request $request)
     {
@@ -93,7 +95,7 @@ class PluginController extends Controller
 
         $result = $this->pluginApi->getCategories($token);
 
-        if (!$result) {
+        if (! $result) {
             throw new FailedException('获取分类列表失败');
         }
 
@@ -101,19 +103,19 @@ class PluginController extends Controller
     }
 
     /**
-     * 获取插件列表（token 可选）
+     * 获取插件列表（token 可选）.
      */
     public function index(Request $request)
     {
         $token = $request->get('token', '');
 
-         $filters = $request->only([
+        $filters = $request->only([
             'title',
             'category_id',
-            'is_free',
+            'payment_type',
             'is_official',
             'per_page',
-            'page'
+            'page',
         ]);
 
         $result = $this->pluginApi->getPlugins($token, $filters);
@@ -143,16 +145,19 @@ class PluginController extends Controller
     }
 
     /**
-     * 获取已安装插件列表
+     * 获取已安装插件列表.
      */
     public function installed()
     {
         $pluginManager = new InstalledPluginManager();
+
         return $pluginManager->getAll();
     }
 
     /**
-     * 检查插件是否已安装
+     * 检查插件是否已安装.
+     *
+     * @throws FileNotFoundException
      */
     public function checkInstalled(Request $request)
     {
@@ -173,7 +178,7 @@ class PluginController extends Controller
     }
 
     /**
-     * SSE 流式安装插件
+     * SSE 流式安装插件.
      */
     public function installStream(Request $request)
     {
@@ -184,18 +189,21 @@ class PluginController extends Controller
         $type = $request->get('type', 'library'); // 插件类型
 
         return SseResponse::create(function (SseResponse $sse) use ($token, $id, $name, $version, $type) {
-            if (!$token) {
+            if (! $token) {
                 $sse->error('认证信息丢失');
+
                 return;
             }
 
-            if (!$name) {
+            if (! $name) {
                 $sse->error('缺少包名信息');
+
                 return;
             }
 
-            if (!$this->pluginApi->checkPermission($token, $id, $version)) {
+            if (! $this->pluginApi->checkPermission($token, $id, $version)) {
                 $sse->error('😭暂无安装权限, 请到官网购买该插件之后再来安装');
+
                 return;
             }
 
@@ -205,8 +213,8 @@ class PluginController extends Controller
                 $name,       // Composer 包名
                 $version,    // 版本
                 $id,         // 插件 ID（用于记录）
-                fn($step, $percent, $message) => $sse->progress($step, $percent, $message),
-                fn($message, $type) => $sse->log($message, $type),
+                fn ($step, $percent, $message) => $sse->progress($step, $percent, $message),
+                fn ($message, $type) => $sse->log($message, $type),
                 $type,       // 插件类型
                 $token      // 认证 Token（下载时需要）
             );
@@ -216,15 +224,16 @@ class PluginController extends Controller
     }
 
     /**
-     * SSE 流式卸载插件
+     * SSE 流式卸载插件.
      */
     public function uninstallStream(Request $request)
     {
         $name = $request->get('name');
 
         return SseResponse::create(function (SseResponse $sse) use ($name) {
-            if (!$name) {
+            if (! $name) {
                 $sse->error('包名不能为空');
+
                 return;
             }
 
@@ -232,8 +241,8 @@ class PluginController extends Controller
 
             $result = $this->installService->uninstall(
                 $name,
-                fn($step, $percent, $message) => $sse->progress($step, $percent, $message),
-                fn($message, $type) => $sse->log($message, $type)
+                fn ($step, $percent, $message) => $sse->progress($step, $percent, $message),
+                fn ($message, $type) => $sse->log($message, $type)
             );
 
             $sse->complete($result);
@@ -241,9 +250,9 @@ class PluginController extends Controller
     }
 
     /**
-     * 加载 Plugin 扩展包自身的 vue 视图
+     * 加载 Plugin 扩展包自身的 vue 视图.
      *
-     * @param $path
+     * @param  $path
      * @return array
      */
     public function entry($path)
@@ -261,18 +270,18 @@ class PluginController extends Controller
 
         return [
             'entry' => '/' . $path,
-            'files' => CollectVueDepsFile::collectFilesWithDeps($filePath, $basePath)
+            'files' => CollectVueDepsFile::collectFilesWithDeps($filePath, $basePath),
         ];
     }
 
     /**
-     * 通用插件视图路由
+     * 通用插件视图路由.
      *
      * 路径格式: /{plugin_name}/{path}
      * 例如: /test/test/user/index → 插件 test/test 的 resource/view/user/index.vue
      *
-     * @param string $pluginName vendor/package 格式的插件名
-     * @param string $path 文件路径
+     * @param  string  $pluginName  vendor/package 格式的插件名
+     * @param  string  $path  文件路径
      * @return array
      */
     public function pluginView(string $pluginName, string $path): array

@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
 /**
- * 插件优化命令
+ * 插件优化命令.
  *
  * 扫描已安装的插件目录，更新插件记录
  */
@@ -24,6 +24,7 @@ class PluginOptimizeCommand extends Command
 
         if (empty($plugins)) {
             $this->components->info('暂无插件');
+
             return self::SUCCESS;
         }
 
@@ -33,7 +34,7 @@ class PluginOptimizeCommand extends Command
             $directory = $plugin['path'] ?? '';
             $composerFile = $directory . '/composer.json';
 
-            if (!File::exists($composerFile)) {
+            if (! File::exists($composerFile)) {
                 continue;
             }
 

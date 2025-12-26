@@ -1,4 +1,5 @@
 <?php
+
 namespace Catch\Plugin\Enums;
 
 enum PluginType: string
@@ -38,7 +39,7 @@ enum PluginType: string
     }
 
     /**
-     * 是否支持 Composer 安装/卸载
+     * 是否支持 Composer 安装/卸载.
      */
     public function supportsComposer(): bool
     {
