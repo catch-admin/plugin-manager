@@ -16,7 +16,7 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "laravel/roster": "^0.2.5",
+        "laravel/roster": "^0.5.1",
         "catchadmin/plugin-hook": "^v0.1.2",
         "catchadmin/plugin-installer": "^v0.1.0"
     },
